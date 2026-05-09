@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useMemo, useState } from 'react';
 import { db } from '@/lib/firebase';
@@ -23,6 +23,7 @@ export default function DoctorPage() {
   const [verifyingPatient, setVerifyingPatient] = useState(false);
   const [showCreatePatient, setShowCreatePatient] = useState(false);
   const [newPatientName, setNewPatientName] = useState('');
+  const [newPatientEstimate, setNewPatientEstimate] = useState('');
   const [creatingPatient, setCreatingPatient] = useState(false);
   const [catalogItems, setCatalogItems] = useState<HospitalCatalogItem[]>(DEFAULT_HOSPITAL_CATALOG);
   const [catalogLoading, setCatalogLoading] = useState(false);
@@ -184,6 +185,7 @@ export default function DoctorPage() {
     setVerifiedPatient(null);
     setShowCreatePatient(false);
     setNewPatientName('');
+    setNewPatientEstimate('');
     setSelectedCharges([]);
     setConsultationPrice('');
     setReason('');
@@ -242,6 +244,8 @@ export default function DoctorPage() {
       const timestamp = Date.now();
       const userRef = doc(db!, 'users', trimmedPatientId);
       const billRef = doc(db!, 'bills', trimmedPatientId);
+      const estimatedCostNum = parseFloat(newPatientEstimate);
+      const hasEstimate = !isNaN(estimatedCostNum) && estimatedCostNum > 0;
 
       await setDoc(userRef, {
         patientId: trimmedPatientId,
@@ -255,6 +259,7 @@ export default function DoctorPage() {
         patientId: trimmedPatientId,
         procedures: [],
         totalAmount: 0,
+        ...(hasEstimate && { estimatedCost: estimatedCostNum }),
       });
 
       setVerifiedPatient({
@@ -264,6 +269,7 @@ export default function DoctorPage() {
       setPatientId(trimmedPatientId);
       setShowCreatePatient(false);
       setNewPatientName('');
+      setNewPatientEstimate('');
       setSuccess(true);
       setSuccessMessage('Patient created successfully. You can now add procedures.');
 
@@ -358,319 +364,250 @@ export default function DoctorPage() {
     setError('');
   };
 
+  // ── Loading ───────────────────────────────────────────────
   if (!authReady) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.16),transparent_30%),linear-gradient(180deg,#eff6ff,#ffffff)]">
+      <div style={{ minHeight: '100vh', background: '#F8FAFC', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div className="text-center">
-          <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-blue-600"></div>
-          <p className="font-semibold text-gray-700">Loading doctor portal...</p>
+          <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-b-2" style={{ borderColor: '#2563EB' }} />
+          <p style={{ color: '#64748B' }} className="text-sm font-medium">Loading doctor portal…</p>
         </div>
       </div>
     );
   }
 
+  // ── Login ─────────────────────────────────────────────────
   if (!loggedIn) {
     return (
-      <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.18),transparent_32%),linear-gradient(180deg,#eff6ff,#ffffff)]">
-        <div className="absolute right-6 top-6">
-          <button
-            onClick={() => setShowLoginModal(true)}
-            className="rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
-          >
-            Doctor Login
-          </button>
-        </div>
-
-        <div className="flex min-h-screen items-center justify-center px-6">
-          <div className="text-center">
-            <h1 className="text-3xl font-bold text-gray-900">Doctor Portal</h1>
-            <p className="mt-3 text-gray-600">Log in to access the doctor dashboard.</p>
-          </div>
-        </div>
-
-        {showLoginModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-            <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl">
-              <h2 className="mb-4 text-xl font-bold text-gray-900">Doctor Login</h2>
-              <input
-                type="email"
-                placeholder="Email"
-                value={loginEmail}
-                onChange={(e) => setLoginEmail(e.target.value)}
-                className="mb-4 w-full rounded-xl border border-gray-300 p-3 text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-              />
-              <input
-                type="password"
-                placeholder="Password"
-                value={loginPassword}
-                onChange={(e) => setLoginPassword(e.target.value)}
-                className="mb-4 w-full rounded-xl border border-gray-300 p-3 text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-              />
-              {loginError && <p className="mb-4 text-sm font-semibold text-red-600">{loginError}</p>}
-              <div className="flex justify-end gap-2">
-                <button
-                  onClick={closeLoginModal}
-                  className="rounded-xl bg-gray-100 px-4 py-2 text-gray-700 transition hover:bg-gray-200"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleLogin}
-                  className="rounded-xl bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700"
-                >
-                  Login
-                </button>
-              </div>
+      <div style={{ minHeight: '100vh', background: '#F8FAFC', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+        <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', width: '100%', maxWidth: '420px' }} className="rounded-2xl p-8 shadow-sm">
+          <div className="flex items-center gap-3 mb-7">
+            <div style={{ background: '#2563EB' }} className="grid h-10 w-10 place-items-center rounded-lg text-white font-bold text-sm">KVS</div>
+            <div>
+              <p style={{ color: '#2563EB' }} className="text-xs font-semibold uppercase tracking-wide">Secure Access</p>
+              <h1 style={{ color: '#0F172A' }} className="text-lg font-bold">Doctor Login</h1>
             </div>
           </div>
-        )}
+          <div className="space-y-4">
+            <div>
+              <label style={{ color: '#374151' }} className="mb-1.5 block text-sm font-medium">Email address</label>
+              <input type="email" value={loginEmail} placeholder="doctor@kvshospital.in"
+                onChange={e => setLoginEmail(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleLogin()}
+                style={{ border: '1px solid #CBD5E1', color: '#0F172A' }}
+                className="w-full rounded-lg bg-white px-4 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100" />
+            </div>
+            <div>
+              <label style={{ color: '#374151' }} className="mb-1.5 block text-sm font-medium">Password</label>
+              <input type="password" value={loginPassword} placeholder="••••••••"
+                onChange={e => setLoginPassword(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleLogin()}
+                style={{ border: '1px solid #CBD5E1', color: '#0F172A' }}
+                className="w-full rounded-lg bg-white px-4 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100" />
+            </div>
+          </div>
+          {loginError && (
+            <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', color: '#B91C1C' }} className="mt-4 rounded-lg px-4 py-3 text-sm">{loginError}</div>
+          )}
+          <button onClick={handleLogin} style={{ background: '#2563EB' }}
+            className="mt-6 w-full rounded-lg py-2.5 text-sm font-semibold text-white transition hover:opacity-90">
+            Log in
+          </button>
+        </div>
       </div>
     );
   }
 
+  // ── Dashboard ─────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.16),transparent_30%),linear-gradient(180deg,#eef6ff_0%,#f8fafc_46%,#ffffff_100%)]">
-      <div className="sticky top-0 z-30 border-b border-blue-100 bg-white/85 shadow-sm backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-5 py-5 sm:flex-row sm:items-center sm:justify-between lg:px-8">
-          <div>
-            <p className="text-sm font-bold uppercase tracking-[0.22em] text-blue-600">Hospital workspace</p>
-            <h1 className="mt-1 text-3xl font-black text-gray-950 sm:text-4xl">Doctor Dashboard</h1>
-            <p className="mt-2 text-gray-600">Verify patients, select multiple catalog charges, and post bill items.</p>
+    <div style={{ minHeight: '100vh', background: '#F8FAFC', color: '#0F172A' }}>
+
+      <header style={{ background: '#FFFFFF', borderBottom: '1px solid #E2E8F0', position: 'sticky', top: 0, zIndex: 30 }}>
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-6 py-3">
+          <div className="flex items-center gap-3">
+            <div style={{ background: '#2563EB' }} className="grid h-9 w-9 place-items-center rounded-lg text-white font-bold text-sm">KVS</div>
+            <div>
+              <p style={{ color: '#2563EB' }} className="text-xs font-semibold uppercase tracking-wide">KVS Hospital</p>
+              <h1 style={{ color: '#0F172A' }} className="text-lg font-bold leading-tight">Doctor Dashboard</h1>
+            </div>
           </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <p className="text-sm text-gray-700">
-              Signed in as <span className="font-semibold">Doctor</span>
-            </p>
-            <button
-              onClick={handleLockDashboard}
-              className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-blue-50"
-            >
-              Lock dashboard
-            </button>
+          <div className="flex items-center gap-3">
+            <span style={{ color: '#64748B' }} className="text-sm hidden sm:inline">Signed in as <strong style={{ color: '#0F172A' }}>Doctor</strong></span>
+            <button onClick={handleLockDashboard}
+              style={{ border: '1px solid #CBD5E1', color: '#374151' }}
+              className="rounded-lg bg-white px-4 py-2 text-sm font-medium transition hover:bg-gray-50">Lock Dashboard</button>
           </div>
         </div>
-      </div>
+      </header>
 
-      <div className="mx-auto max-w-7xl px-5 py-8 lg:px-8 lg:py-10">
-        <form onSubmit={handleSubmit} className="rounded-[2rem] border border-white/80 bg-white p-6 shadow-2xl shadow-blue-950/10 sm:p-8">
-          <div className="mb-6">
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Patient ID</label>
+      <div className="mx-auto max-w-6xl px-6 py-8">
+        <form onSubmit={handleSubmit} style={{ background: '#FFFFFF', border: '1px solid #E2E8F0' }} className="rounded-2xl p-6 shadow-sm sm:p-8">
+
+          {/* Patient ID */}
+          <div className="mb-7">
+            <label style={{ color: '#374151' }} className="mb-1.5 block text-sm font-semibold">Patient ID</label>
             <div className="flex flex-col gap-3 sm:flex-row">
-              <input
-                type="text"
-                value={patientId}
-                onChange={(e) => handlePatientIdChange(e.target.value)}
-                className="w-full rounded-2xl border border-gray-300 px-4 py-3 text-gray-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                placeholder="Enter patient ID"
-              />
-              <button
-                type="button"
-                onClick={handleVerifyPatient}
-                disabled={verifyingPatient || !patientId.trim()}
-                className="rounded-2xl bg-green-600 px-6 py-3 font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-300"
-              >
-                {verifyingPatient ? 'Verifying...' : 'Verify'}
+              <input type="text" value={patientId} placeholder="Enter patient ID" onChange={e => handlePatientIdChange(e.target.value)}
+                style={{ border: '1px solid #CBD5E1', color: '#0F172A' }}
+                className="w-full rounded-lg bg-white px-4 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100" />
+              <button type="button" onClick={handleVerifyPatient} disabled={verifyingPatient || !patientId.trim()}
+                style={{ background: '#059669' }}
+                className="rounded-lg px-6 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap">
+                {verifyingPatient ? 'Verifying…' : 'Verify Patient'}
               </button>
             </div>
             {verifiedPatient && (
-              <div className="mt-3 rounded-2xl border border-green-200 bg-green-50 p-4 text-sm text-green-700">
-                Patient verified: <span className="font-semibold">{verifiedPatient.name}</span>
+              <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', color: '#065F46' }} className="mt-3 rounded-lg px-4 py-3 text-sm">
+                ✓ Verified: <strong>{verifiedPatient.name}</strong> ({verifiedPatient.patientId})
               </div>
             )}
           </div>
 
+          {/* Create Patient */}
           {showCreatePatient && !verifiedPatient && (
-            <div className="mb-6 rounded-2xl border border-blue-200 bg-blue-50 p-6">
-              <h2 className="text-lg font-bold text-gray-900">Create New Patient</h2>
-              <p className="mt-1 text-sm text-gray-600">No patient was found for this ID.</p>
-
-              <div className="mt-5 grid gap-4 md:grid-cols-2">
+            <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE' }} className="mb-7 rounded-xl p-5">
+              <h2 style={{ color: '#0F172A' }} className="font-bold mb-1">Create New Patient</h2>
+              <p style={{ color: '#64748B' }} className="text-sm mb-4">No patient found for this ID. Register them below.</p>
+              <div className="grid gap-4 md:grid-cols-3">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Patient Name</label>
-                  <input
-                    type="text"
-                    value={newPatientName}
-                    onChange={(e) => setNewPatientName(e.target.value)}
-                    className="w-full rounded-2xl border border-blue-200 bg-white px-4 py-3 text-gray-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                    placeholder="Enter patient name"
-                  />
+                  <label style={{ color: '#374151' }} className="mb-1.5 block text-sm font-medium">Patient Name</label>
+                  <input type="text" value={newPatientName} placeholder="Full name" onChange={e => setNewPatientName(e.target.value)}
+                    style={{ border: '1px solid #CBD5E1', color: '#0F172A' }}
+                    className="w-full rounded-lg bg-white px-4 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100" />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Patient ID</label>
-                  <input
-                    type="text"
-                    value={patientId.trim()}
-                    readOnly
-                    className="w-full rounded-2xl border border-blue-200 bg-gray-100 px-4 py-3 text-gray-900 outline-none"
-                  />
+                  <label style={{ color: '#374151' }} className="mb-1.5 block text-sm font-medium">Patient ID</label>
+                  <input type="text" value={patientId.trim()} readOnly
+                    style={{ border: '1px solid #E2E8F0', color: '#94A3B8', background: '#F8FAFC' }}
+                    className="w-full rounded-lg px-4 py-2.5 text-sm outline-none" />
+                </div>
+                <div>
+                  <label style={{ color: '#374151' }} className="mb-1.5 block text-sm font-medium">
+                    Estimated Cost ($) <span style={{ color: '#94A3B8' }} className="font-normal">(optional)</span>
+                  </label>
+                  <input type="number" min="0" step="0.01" value={newPatientEstimate} placeholder="e.g. 5000" onChange={e => setNewPatientEstimate(e.target.value)}
+                    style={{ border: '1px solid #FDE68A', color: '#0F172A', background: '#FFFBEB' }}
+                    className="w-full rounded-lg px-4 py-2.5 text-sm outline-none" />
+                  <p style={{ color: '#94A3B8' }} className="mt-1 text-xs">Patient will see this vs actual charges</p>
                 </div>
               </div>
-
-              <button
-                type="button"
-                onClick={handleCreatePatient}
-                disabled={creatingPatient || !newPatientName.trim()}
-                className="mt-5 rounded-2xl bg-blue-600 px-5 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
-              >
-                {creatingPatient ? 'Creating Patient...' : 'Create Patient'}
+              <button type="button" onClick={handleCreatePatient} disabled={creatingPatient || !newPatientName.trim()}
+                style={{ background: '#2563EB' }}
+                className="mt-4 rounded-lg px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed">
+                {creatingPatient ? 'Creating…' : 'Create Patient'}
               </button>
             </div>
           )}
 
-          <div className={`mb-6 ${!verifiedPatient ? 'pointer-events-none opacity-50' : ''}`}>
-            <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+          {/* Hospital Catalog */}
+          <div className={`mb-7 ${!verifiedPatient ? 'pointer-events-none opacity-50' : ''}`}>
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <label className="block text-sm font-semibold text-gray-700">Hospital Catalog</label>
-                <p className="mt-1 text-xs font-medium text-gray-500">
-                  Prices load from Firestore: hospital / priceCatalog.
-                </p>
+                <label style={{ color: '#374151' }} className="block text-sm font-semibold">Hospital Catalog</label>
+                <p style={{ color: '#94A3B8' }} className="text-xs mt-0.5">Prices from Firestore: hospital / priceCatalog</p>
               </div>
-              <input
-                type="text"
-                value={catalogSearch}
-                onChange={(e) => setCatalogSearch(e.target.value)}
-                disabled={!verifiedPatient}
-                className="w-full rounded-2xl border border-gray-300 px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 md:w-72"
-                placeholder="Search catalog..."
-              />
+              <input type="text" value={catalogSearch} placeholder="Search catalog…" disabled={!verifiedPatient}
+                onChange={e => setCatalogSearch(e.target.value)}
+                style={{ border: '1px solid #CBD5E1', color: '#0F172A' }}
+                className="w-full rounded-lg bg-white px-4 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 sm:w-56" />
             </div>
-
             <div className="mb-4 flex flex-wrap gap-2">
-              <button
-                type="button"
-                disabled={!verifiedPatient}
-                onClick={() => setCatalogFilter('all')}
-                className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                  catalogFilter === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                All
-              </button>
-              {catalogTypes.map((type) => (
-                <button
-                  key={type}
-                  type="button"
-                  disabled={!verifiedPatient}
-                  onClick={() => setCatalogFilter(type)}
-                  className={`rounded-full px-4 py-2 text-sm font-semibold capitalize transition ${
-                    catalogFilter === type ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  {type}
-                </button>
+              <button type="button" disabled={!verifiedPatient} onClick={() => setCatalogFilter('all')}
+                style={catalogFilter === 'all' ? { background: '#2563EB', color: '#FFFFFF', border: '1px solid #2563EB' } : { border: '1px solid #CBD5E1', color: '#374151', background: '#FFFFFF' }}
+                className="rounded-full px-4 py-1.5 text-sm font-medium transition hover:opacity-90">All</button>
+              {catalogTypes.map(type => (
+                <button key={type} type="button" disabled={!verifiedPatient} onClick={() => setCatalogFilter(type)}
+                  style={catalogFilter === type ? { background: '#2563EB', color: '#FFFFFF', border: '1px solid #2563EB' } : { border: '1px solid #CBD5E1', color: '#374151', background: '#FFFFFF' }}
+                  className="rounded-full px-4 py-1.5 text-sm font-medium capitalize transition hover:opacity-90">{type}</button>
               ))}
             </div>
-
             {catalogLoading ? (
-              <div className="rounded-2xl border border-blue-100 bg-blue-50 p-6 text-center text-sm font-semibold text-blue-700">
-                Loading hospital catalog...
+              <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0' }} className="rounded-xl p-8 text-center">
+                <p style={{ color: '#64748B' }} className="text-sm">Loading hospital catalog…</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                {visibleCatalogItems.map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  disabled={!verifiedPatient}
-                  onClick={() => handleCatalogSelect(item)}
-                  className={`rounded-2xl border px-4 py-4 text-left transition ${
-                    selectedCharges.some((charge) => charge.catalogId === item.id)
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-200 bg-white hover:border-blue-300'
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="font-semibold text-gray-900">{item.name}</p>
-                      <p className="mt-1 text-sm text-gray-500">{item.category}</p>
-                    </div>
-                    <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold capitalize text-gray-700">
-                      {item.type}
-                    </span>
-                  </div>
-                  <p className="mt-3 text-sm font-bold text-blue-700">
-                    {item.editableByDoctor ? 'Doctor priced' : `$${item.price.toFixed(2)}`}
-                  </p>
-                </button>
-                ))}
+                {visibleCatalogItems.map(item => {
+                  const sel = selectedCharges.some(c => c.catalogId === item.id);
+                  return (
+                    <button key={item.id} type="button" disabled={!verifiedPatient} onClick={() => handleCatalogSelect(item)}
+                      style={sel ? { border: '2px solid #2563EB', background: '#EFF6FF' } : { border: '1px solid #E2E8F0', background: '#FFFFFF' }}
+                      className="rounded-xl px-4 py-4 text-left transition hover:shadow-sm">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <p style={{ color: '#0F172A' }} className="font-semibold text-sm">{item.name}</p>
+                          <p style={{ color: '#94A3B8' }} className="text-xs mt-0.5">{item.category}</p>
+                        </div>
+                        <span style={{ background: '#F1F5F9', color: '#64748B' }} className="rounded-full px-2.5 py-0.5 text-xs font-medium capitalize shrink-0">{item.type}</span>
+                      </div>
+                      <p style={{ color: '#2563EB' }} className="mt-3 text-sm font-bold">
+                        {item.editableByDoctor ? 'Doctor priced' : `$${item.price.toFixed(2)}`}
+                      </p>
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
 
-          <div className={`mb-6 grid gap-6 md:grid-cols-2 ${!verifiedPatient ? 'pointer-events-none opacity-50' : ''}`}>
+          {/* Selected + Reason */}
+          <div className={`mb-7 grid gap-5 md:grid-cols-2 ${!verifiedPatient ? 'pointer-events-none opacity-50' : ''}`}>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Selected Charges</label>
+              <label style={{ color: '#374151' }} className="mb-1.5 block text-sm font-semibold">Selected Charges</label>
               {selectedChargeItems.length > 0 ? (
-                <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4">
-                  <div className="space-y-3">
+                <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE' }} className="rounded-xl p-4">
+                  <div className="space-y-2">
                     {selectedChargeItems.map(({ charge, item }) => (
-                      <div key={item.id} className="flex items-center justify-between gap-3 text-sm">
+                      <div key={item.id} className="flex items-center justify-between text-sm">
                         <div>
-                          <p className="font-semibold text-gray-900">{item.name}</p>
-                          <p className="capitalize text-gray-500">{item.type}</p>
+                          <p style={{ color: '#0F172A' }} className="font-medium">{item.name}</p>
+                          <p style={{ color: '#64748B' }} className="text-xs capitalize">{item.type}</p>
                         </div>
-                        <p className="font-bold text-blue-700">${charge.price.toFixed(2)}</p>
+                        <p style={{ color: '#1D4ED8' }} className="font-bold">${charge.price.toFixed(2)}</p>
                       </div>
                     ))}
                   </div>
-                  <div className="mt-4 flex items-center justify-between border-t border-blue-200 pt-3 font-bold text-gray-900">
-                    <span>Total</span>
-                    <span>${selectedTotal.toFixed(2)}</span>
+                  <div className="mt-3 flex items-center justify-between border-t pt-3 text-sm font-bold" style={{ borderColor: '#BFDBFE' }}>
+                    <span style={{ color: '#0F172A' }}>Total</span>
+                    <span style={{ color: '#1D4ED8' }}>${selectedTotal.toFixed(2)}</span>
                   </div>
                 </div>
               ) : (
-                <div className="w-full rounded-2xl border border-gray-300 bg-gray-100 px-4 py-3 text-gray-900">
-                  Select one or more catalog items
+                <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', color: '#94A3B8' }} className="rounded-xl px-4 py-3 text-sm">
+                  Select one or more catalog items above
                 </div>
               )}
-
               {selectedConsultation && (
-                <input
-                  type="number"
-                  min="1"
-                  step="1"
-                  value={consultationPrice}
-                  onChange={(e) => handleConsultationPriceChange(e.target.value)}
-                  disabled={!verifiedPatient}
-                  className="mt-3 w-full rounded-2xl border border-blue-300 bg-white px-4 py-3 text-gray-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                  placeholder="Enter doctor consultation price"
-                />
+                <div className="mt-3">
+                  <label style={{ color: '#374151' }} className="mb-1.5 block text-sm font-medium">Consultation Price ($)</label>
+                  <input type="number" min="1" step="1" value={consultationPrice} disabled={!verifiedPatient}
+                    onChange={e => handleConsultationPriceChange(e.target.value)} placeholder="Enter price"
+                    style={{ border: '1px solid #CBD5E1', color: '#0F172A' }}
+                    className="w-full rounded-lg bg-white px-4 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100" />
+                </div>
               )}
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Reason / Notes *</label>
-              <input
-                type="text"
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                disabled={!verifiedPatient}
-                className="w-full rounded-2xl border border-gray-300 px-4 py-3 text-gray-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                placeholder="Explain why this charge is being added..."
-              />
+              <label style={{ color: '#374151' }} className="mb-1.5 block text-sm font-semibold">
+                Reason / Notes <span style={{ color: '#DC2626' }}>*</span>
+              </label>
+              <textarea value={reason} onChange={e => setReason(e.target.value)} disabled={!verifiedPatient} rows={5}
+                placeholder="Explain why this charge is being added. Patients will see this."
+                style={{ border: '1px solid #CBD5E1', color: '#0F172A', resize: 'vertical' }}
+                className="w-full rounded-lg bg-white px-4 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100" />
+              <p style={{ color: '#94A3B8' }} className="mt-1 text-xs">This reason is visible to the patient on their portal.</p>
             </div>
           </div>
 
-          {error && (
-            <div className="mb-6 rounded-2xl bg-red-50 border border-red-200 p-4 text-sm text-red-700">
-              {error}
-            </div>
-          )}
+          {error && <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', color: '#B91C1C' }} className="mb-5 rounded-lg px-4 py-3 text-sm">{error}</div>}
+          {success && <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', color: '#065F46' }} className="mb-5 rounded-lg px-4 py-3 text-sm">{successMessage}</div>}
 
-          {success && (
-            <div className="mb-6 rounded-2xl bg-green-50 border border-green-200 p-4 text-sm text-green-700">
-              {successMessage}
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={loadingSubmit || !verifiedPatient}
-            className="w-full rounded-2xl bg-blue-600 px-5 py-3 text-white font-semibold transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
-          >
-            {loadingSubmit ? 'Saving procedure...' : 'Add Procedure to Bill'}
+          <button type="submit" disabled={loadingSubmit || !verifiedPatient}
+            style={{ background: '#2563EB' }}
+            className="w-full rounded-lg py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed">
+            {loadingSubmit ? 'Saving charges…' : 'Add Procedure to Bill'}
           </button>
         </form>
       </div>
     </div>
   );
 }
+

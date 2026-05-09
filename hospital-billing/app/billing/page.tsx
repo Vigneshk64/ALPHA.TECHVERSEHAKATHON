@@ -142,7 +142,7 @@ export default function BillingSummaryPage() {
         ) : (
           <div className="rounded-[2rem] border border-gray-200 bg-white p-6 shadow-xl shadow-blue-950/5 lg:p-8">
             <div className="mb-10 text-center">
-              <h2 className="text-3xl font-bold text-gray-900">HEALTHCARE HOSPITAL</h2>
+              <h2 className="text-3xl font-bold text-gray-900">KVS HOSPITAL MANGLORE</h2>
               <p className="mt-2 text-gray-600">123 Medical Avenue, Healthcare City, HC 12345</p>
               <p className="mt-1 text-gray-600">Phone: (555) 123-4567 | Email: billing@healthcare.com</p>
             </div>

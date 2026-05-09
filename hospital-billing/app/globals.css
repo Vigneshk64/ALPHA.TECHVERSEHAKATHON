@@ -1,36 +1,51 @@
 @import "tailwindcss";
 
+/* ── KVS Hospital Design System ────────────────────────────── */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --clr-primary:   #2563EB;  /* Medical blue   */
+  --clr-primary-d: #1D4ED8;  /* Hover blue     */
+  --clr-success:   #059669;  /* Recovery green */
+  --clr-bg:        #F8FAFC;  /* Off-white bg   */
+  --clr-surface:   #FFFFFF;  /* Card surface   */
+  --clr-border:    #E2E8F0;  /* Light gray     */
+  --clr-text:      #0F172A;  /* Near-black     */
+  --clr-muted:     #64748B;  /* Slate gray     */
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 }
 
+/* Disable forced dark mode */
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --clr-bg: #F8FAFC;
+    --clr-surface: #FFFFFF;
+    --clr-text: #0F172A;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+html {
+  color-scheme: light;
 }
 
-button,
-input {
+body {
+  background: var(--clr-bg);
+  color: var(--clr-text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+button, input, textarea, select {
   font: inherit;
 }
 
 ::selection {
-  background: #67e8f9;
-  color: #0f172a;
+  background: #BFDBFE;
+  color: #1E3A8A;
+}
+
+/* ── Utility: Smooth scrolling ─── */
+html {
+  scroll-behavior: smooth;
 }

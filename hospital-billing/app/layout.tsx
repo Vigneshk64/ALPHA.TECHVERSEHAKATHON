@@ -1,21 +1,17 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
+import { Inter } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/lib/auth-context';
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
+const inter = Inter({
   subsets: ['latin'],
-});
-
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
-  subsets: ['latin'],
+  variable: '--font-inter',
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
-  title: 'Hospital Billing Transparency',
-  description: 'Login, role-based access, and billing transparency for hospital payments.',
+  title: 'KVS Hospital — Billing Transparency',
+  description: 'Clear, real-time hospital billing for every patient. KVS Hospital, Mangalore.',
 };
 
 export default function RootLayout({
@@ -24,11 +20,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col">
+    <html lang="en" className={`${inter.variable} h-full`}>
+      <body className="min-h-full flex flex-col font-sans antialiased" suppressHydrationWarning>
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>

@@ -14,6 +14,7 @@ import type { BillDocument, BillProcedure, UserProfile, UserRole } from '@/lib/t
 export function useBillListener(patientId: string) {
   const [procedures, setProcedures] = useState<BillProcedure[]>([]);
   const [total, setTotal] = useState(0);
+  const [estimatedCost, setEstimatedCost] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,11 +30,13 @@ export function useBillListener(patientId: string) {
         if (!snapshot.exists()) {
           setProcedures([]);
           setTotal(0);
+          setEstimatedCost(null);
         } else {
           const data = snapshot.data() as BillDocument;
           const procedures = data.procedures || [];
           setProcedures(procedures);
           setTotal(data.totalAmount ?? procedures.reduce((sum, proc) => sum + proc.cost, 0));
+          setEstimatedCost(data.estimatedCost ?? null);
         }
         setLoading(false);
       },
@@ -47,10 +50,10 @@ export function useBillListener(patientId: string) {
   }, [patientId]);
 
   if (!patientId) {
-    return { procedures: [], total: 0, loading: false, error };
+    return { procedures: [], total: 0, estimatedCost: null, loading: false, error };
   }
 
-  return { procedures, total, loading, error };
+  return { procedures, total, estimatedCost, loading, error };
 }
 
 export function useProtectedPage(requiredRole: UserRole) {

@@ -24,6 +24,7 @@ export interface BillDocument {
   patientId: string;
   procedures: BillProcedure[];
   totalAmount: number;
+  estimatedCost?: number;
 }
 
 export interface Procedure {
