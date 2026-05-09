@@ -10,15 +10,15 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [needsProfileSetup, setNeedsProfileSetup] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
+    const unsubscribe = onAuthStateChanged(auth!, async (authUser) => {
       try {
         if (authUser) {
-          // Get user data from Firestore
-          const userDocRef = doc(db, 'users', authUser.uid);
+          const userDocRef = doc(db!, 'users', authUser.uid);
           const userDocSnap = await getDoc(userDocRef);
 
           if (userDocSnap.exists()) {
@@ -30,23 +30,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               role: userData.role,
               createdAt: userData.createdAt || Date.now(),
             });
+            setNeedsProfileSetup(false);
           } else {
-            // User exists in Auth but not in Firestore
-            // They need to go through role selection
             setUser({
               uid: authUser.uid,
               email: authUser.email || '',
               name: authUser.displayName || '',
-              role: 'patient', // Default role
               createdAt: Date.now(),
             });
+            setNeedsProfileSetup(true);
           }
         } else {
           setUser(null);
+          setNeedsProfileSetup(false);
         }
         setError(null);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Auth error');
+        setUser(null);
+        setNeedsProfileSetup(false);
       } finally {
         setLoading(false);
       }
@@ -57,8 +59,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     try {
-      await signOut(auth);
+      await signOut(auth!);
       setUser(null);
+      setNeedsProfileSetup(false);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Logout failed');
@@ -66,7 +69,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, error, logout }}>
+    <AuthContext.Provider value={{ user, needsProfileSetup, loading, error, logout }}>
       {children}
     </AuthContext.Provider>
   );

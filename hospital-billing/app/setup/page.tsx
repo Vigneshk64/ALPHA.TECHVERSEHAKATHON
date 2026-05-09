@@ -1,21 +1,35 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { doc, setDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import { useAuth } from '@/lib/auth-context';
-
-type UserRole = 'patient' | 'doctor' | 'billing';
+import { createUserProfile } from '@/lib/auth';
+import type { UserRole } from '@/lib/types';
 
 export default function RoleSelectionPage() {
   const router = useRouter();
-  const { user, loading } = useAuth();
+  const { user, loading, needsProfileSetup } = useAuth();
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  if (loading || !user) {
+  useEffect(() => {
+    if (!loading) {
+      if (!user) {
+        router.replace('/');
+      } else if (!needsProfileSetup) {
+        if (user.role === 'doctor') {
+          router.replace('/doctor');
+        } else if (user.role === 'patient') {
+          router.replace('/patient');
+        } else if (user.role === 'billing') {
+          router.replace('/billing');
+        }
+      }
+    }
+  }, [loading, needsProfileSetup, router, user]);
+
+  if (loading || !user || !needsProfileSetup) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-blue-50 to-white">
         <div className="text-center">
@@ -32,21 +46,8 @@ export default function RoleSelectionPage() {
       setError(null);
       setSelectedRole(role);
 
-      // Save user data to Firestore
-      const userDocRef = doc(db, 'users', user.uid);
-      await setDoc(
-        userDocRef,
-        {
-          uid: user.uid,
-          email: user.email,
-          name: user.name,
-          role: role,
-          createdAt: Date.now(),
-        },
-        { merge: true }
-      );
+      await createUserProfile(user.uid, user.email, user.name, role);
 
-      // Redirect based on role
       if (role === 'doctor') {
         router.push('/doctor');
       } else if (role === 'patient') {
@@ -62,24 +63,20 @@ export default function RoleSelectionPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-blue-50 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-white flex items-center justify-center px-4">
       <div className="max-w-2xl w-full">
-        {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-3">Welcome, {user.name}! 👋</h1>
+          <h1 className="text-4xl font-bold text-gray-900 mb-3">Welcome, {user.name || 'there'}! 👋</h1>
           <p className="text-gray-600">Select your role to get started</p>
         </div>
 
-        {/* Error Message */}
         {error && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
             <p className="text-red-800 text-sm">{error}</p>
           </div>
         )}
 
-        {/* Role Selection Cards */}
         <div className="grid md:grid-cols-3 gap-6 mb-8">
-          {/* Patient Card */}
           <button
             onClick={() => handleSelectRole('patient')}
             disabled={saving}
@@ -92,14 +89,13 @@ export default function RoleSelectionPage() {
             <div className="text-4xl mb-3">👤</div>
             <h3 className="text-lg font-bold text-gray-900 mb-2">Patient</h3>
             <p className="text-sm text-gray-600 mb-4">
-              View your medical bills in real-time, understand charges with AI explanations
+              View your medical bills in real-time, understand charges with AI explanations.
             </p>
             <div className="text-xs text-blue-600 font-semibold">
               {selectedRole === 'patient' && saving ? 'Setting up...' : 'Click to select'}
             </div>
           </button>
 
-          {/* Doctor Card */}
           <button
             onClick={() => handleSelectRole('doctor')}
             disabled={saving}
@@ -119,7 +115,6 @@ export default function RoleSelectionPage() {
             </div>
           </button>
 
-          {/* Billing Staff Card */}
           <button
             onClick={() => handleSelectRole('billing')}
             disabled={saving}
@@ -140,10 +135,9 @@ export default function RoleSelectionPage() {
           </button>
         </div>
 
-        {/* Info Box */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
           <p className="text-sm text-gray-700">
-            <span className="font-semibold text-blue-900">💡 Tip:</span> You can change your role later in settings. Choose the role that best matches your responsibilities in the healthcare facility.
+            <span className="font-semibold text-blue-900">💡 Tip:</span> Your role is stored in Firestore so you can access the right dashboard every time.
           </p>
         </div>
       </div>
