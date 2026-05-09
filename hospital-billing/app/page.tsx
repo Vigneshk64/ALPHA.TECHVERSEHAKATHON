@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-const LOGIN_EMAIL    = 'georgerocky809@gmail.com';
+const LOGIN_EMAIL = 'georgerocky809@gmail.com';
 const LOGIN_PASSWORD = 'sanathdr';
 
 const FAILURES = [
@@ -41,10 +41,10 @@ const FAILURES = [
 
 export default function Home() {
   const router = useRouter();
-  const [showLogin, setShowLogin]       = useState(false);
-  const [email,    setEmail]            = useState('');
-  const [password, setPassword]         = useState('');
-  const [loginErr, setLoginErr]         = useState('');
+  const [showLogin, setShowLogin] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loginErr, setLoginErr] = useState('');
 
   const closeLogin = () => { setShowLogin(false); setEmail(''); setPassword(''); setLoginErr(''); };
 
@@ -164,8 +164,8 @@ export default function Home() {
                 { icon: '📊', text: 'Estimate vs actual' },
                 { icon: '📋', text: 'Doctor\'s notes' },
               ].map(({ icon, text }) => (
-                <div key={text} style={{ background: '#F8FAFC', border: '1px solid #E2E8F0' }}
-                  className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm" style2={{ color: '#334155' }}>
+                <div key={text} style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', color: '#334155' }}
+                  className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm">
                   <span>{icon}</span>
                   <span style={{ color: '#334155' }} className="text-sm">{text}</span>
                 </div>
