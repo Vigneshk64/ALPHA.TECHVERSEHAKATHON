@@ -58,24 +58,32 @@ export default function PatientPage() {
 
   if (!enteredPatientId) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
-        <div className="bg-white border-b border-blue-100 shadow-sm">
-          <div className="max-w-5xl mx-auto px-6 py-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.18),transparent_32%),linear-gradient(180deg,#eff6ff_0%,#f8fafc_55%,#ffffff_100%)]">
+        <div className="border-b border-blue-100 bg-white/85 shadow-sm backdrop-blur-xl">
+          <div className="mx-auto flex max-w-6xl flex-col gap-4 px-5 py-6 sm:flex-row sm:items-center sm:justify-between lg:px-8">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Patient Portal</h1>
-              <p className="text-gray-600 mt-2">Enter your patient ID to view your medical bill.</p>
+              <p className="text-sm font-bold uppercase tracking-[0.22em] text-blue-600">BillClear</p>
+              <h1 className="mt-2 text-3xl font-black text-gray-950 sm:text-4xl">Patient Portal</h1>
+              <p className="mt-2 max-w-xl text-gray-600">Enter your patient ID to view your live medical bill and explanations.</p>
             </div>
             <button
               onClick={handleSignOut}
-              className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm text-gray-700 transition hover:bg-gray-50"
+              className="rounded-full border border-gray-200 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-200 hover:bg-blue-50"
             >
               ← Back to Home
             </button>
           </div>
         </div>
 
-        <div className="max-w-md mx-auto px-6 py-16">
-          <div className="bg-white rounded-3xl shadow-lg p-8">
+        <div className="mx-auto grid max-w-6xl items-center gap-10 px-5 py-12 lg:grid-cols-[1fr_500px] lg:px-8 lg:py-20">
+          <div className="hidden lg:block">
+            <div className="rounded-[2rem] border border-white/70 bg-white/55 p-8 shadow-xl shadow-blue-950/5 backdrop-blur">
+              <p className="text-sm font-bold uppercase tracking-[0.22em] text-cyan-700">Live billing</p>
+              <h2 className="mt-3 text-4xl font-black leading-tight text-slate-950">Know every charge while care is happening.</h2>
+              <p className="mt-4 text-lg leading-8 text-slate-600">View procedures, medicines, consultation charges, and AI explanations from one patient ID.</p>
+            </div>
+          </div>
+          <div className="rounded-[2rem] border border-white/80 bg-white p-8 shadow-2xl shadow-blue-950/10">
             <form onSubmit={handlePatientIdSubmit} className="space-y-6">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">Patient ID</label>
@@ -90,7 +98,7 @@ export default function PatientPage() {
               </div>
               <button
                 type="submit"
-                className="w-full rounded-2xl bg-blue-600 px-5 py-3 text-white font-semibold transition hover:bg-blue-700"
+                className="w-full rounded-2xl bg-blue-600 px-5 py-4 text-white font-bold shadow-lg shadow-blue-600/20 transition hover:-translate-y-0.5 hover:bg-blue-700"
               >
                 View My Bill
               </button>
@@ -102,24 +110,24 @@ export default function PatientPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
-      <div className="bg-white border-b border-blue-100 shadow-sm">
-        <div className="max-w-5xl mx-auto px-6 py-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.16),transparent_30%),linear-gradient(180deg,#eff6ff_0%,#ffffff_100%)]">
+      <div className="border-b border-blue-100 bg-white/85 shadow-sm backdrop-blur-xl">
+        <div className="mx-auto flex max-w-6xl flex-col gap-4 px-5 py-6 sm:flex-row sm:items-center sm:justify-between lg:px-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">My Medical Bill</h1>
+            <h1 className="text-3xl font-black text-gray-950">My Medical Bill</h1>
             <p className="text-gray-600 mt-2">Your healthcare charges explained clearly.</p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <p className="text-sm text-gray-700">Patient ID: <span className="font-semibold">{enteredPatientId}</span></p>
             <button
               onClick={() => setEnteredPatientId('')}
-              className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm text-gray-700 transition hover:bg-gray-50"
+              className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-blue-50"
             >
               Change Patient ID
             </button>
             <button
               onClick={handleSignOut}
-              className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm text-gray-700 transition hover:bg-gray-50"
+              className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-blue-50"
             >
               ← Back to Home
             </button>
@@ -127,7 +135,7 @@ export default function PatientPage() {
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-6 py-10">
+      <div className="mx-auto max-w-6xl px-5 py-8 lg:px-8 lg:py-10">
         <div className="relative mb-8 overflow-hidden rounded-3xl bg-slate-950 p-8 text-white shadow-2xl">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(34,211,238,0.35),transparent_35%),linear-gradient(135deg,rgba(37,99,235,0.95),rgba(15,23,42,0.98))]" />
           <div className="relative">

@@ -360,7 +360,7 @@ export default function DoctorPage() {
 
   if (!authReady) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-blue-50 to-white">
+      <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.16),transparent_30%),linear-gradient(180deg,#eff6ff,#ffffff)]">
         <div className="text-center">
           <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-blue-600"></div>
           <p className="font-semibold text-gray-700">Loading doctor portal...</p>
@@ -371,7 +371,7 @@ export default function DoctorPage() {
 
   if (!loggedIn) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
+      <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.18),transparent_32%),linear-gradient(180deg,#eff6ff,#ffffff)]">
         <div className="absolute right-6 top-6">
           <button
             onClick={() => setShowLoginModal(true)}
@@ -429,12 +429,13 @@ export default function DoctorPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
-      <div className="bg-white border-b border-blue-100 shadow-sm">
-        <div className="max-w-5xl mx-auto px-6 py-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.16),transparent_30%),linear-gradient(180deg,#eef6ff_0%,#f8fafc_46%,#ffffff_100%)]">
+      <div className="sticky top-0 z-30 border-b border-blue-100 bg-white/85 shadow-sm backdrop-blur-xl">
+        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-5 py-5 sm:flex-row sm:items-center sm:justify-between lg:px-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Doctor Dashboard</h1>
-            <p className="text-gray-600 mt-2">Add a predefined procedure to a patient&apos;s bill.</p>
+            <p className="text-sm font-bold uppercase tracking-[0.22em] text-blue-600">Hospital workspace</p>
+            <h1 className="mt-1 text-3xl font-black text-gray-950 sm:text-4xl">Doctor Dashboard</h1>
+            <p className="mt-2 text-gray-600">Verify patients, select multiple catalog charges, and post bill items.</p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <p className="text-sm text-gray-700">
@@ -442,7 +443,7 @@ export default function DoctorPage() {
             </p>
             <button
               onClick={handleLockDashboard}
-              className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm text-gray-700 transition hover:bg-gray-50"
+              className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-blue-50"
             >
               Lock dashboard
             </button>
@@ -450,8 +451,8 @@ export default function DoctorPage() {
         </div>
       </div>
 
-      <div className="max-w-3xl mx-auto px-6 py-10">
-        <form onSubmit={handleSubmit} className="bg-white rounded-3xl shadow-lg p-8">
+      <div className="mx-auto max-w-7xl px-5 py-8 lg:px-8 lg:py-10">
+        <form onSubmit={handleSubmit} className="rounded-[2rem] border border-white/80 bg-white p-6 shadow-2xl shadow-blue-950/10 sm:p-8">
           <div className="mb-6">
             <label className="block text-sm font-semibold text-gray-700 mb-2">Patient ID</label>
             <div className="flex flex-col gap-3 sm:flex-row">
@@ -565,7 +566,7 @@ export default function DoctorPage() {
                 Loading hospital catalog...
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 {visibleCatalogItems.map((item) => (
                 <button
                   key={item.id}
