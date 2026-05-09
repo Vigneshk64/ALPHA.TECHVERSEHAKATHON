@@ -4,36 +4,57 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, setDoc, updateDoc, arrayUnion, increment } from 'firebase/firestore';
-import { signOutUser, verifyPatient } from '@/lib/auth';
+import { verifyPatient } from '@/lib/auth';
 
-const COMMON_PROCEDURES = [
-  { name: 'X-Ray', category: 'Imaging' },
-  { name: 'Blood Test', category: 'Lab' },
-  { name: 'MRI Scan', category: 'Imaging' },
-  { name: 'CT Scan', category: 'Imaging' },
-  { name: 'Ultrasound', category: 'Imaging' },
-  { name: 'ECG', category: 'Diagnostic' },
-  { name: 'Physical Therapy', category: 'Treatment' },
-  { name: 'Consultation', category: 'Service' },
-  { name: 'Surgery', category: 'Procedure' },
-  { name: 'Medication', category: 'Pharmacy' },
+const PROCEDURES = [
+  { name: "X-Ray", category: "Imaging", price: 500 },
+  { name: "Blood Test", category: "Lab", price: 300 },
+  { name: "MRI Scan", category: "Imaging", price: 3500 },
+  { name: "CT Scan", category: "Imaging", price: 2500 },
+  { name: "Ultrasound", category: "Imaging", price: 800 },
+  { name: "ECG", category: "Diagnostic", price: 400 },
+  { name: "Physical Therapy", category: "Treatment", price: 600 },
+  { name: "Consultation", category: "Service", price: 500 },
+  { name: "Surgery", category: "Procedure", price: 15000 },
+  { name: "Medication", category: "Pharmacy", price: 200 },
+  { name: "Paracetamol", category: "Pharmacy", price: 50 },
+  { name: "Amoxicillin", category: "Pharmacy", price: 150 },
+  { name: "Room Charges", category: "Accommodation", price: 1500 },
+  { name: "ICU Charges", category: "Accommodation", price: 5000 },
+  { name: "Ambulance", category: "Service", price: 800 }
 ];
 
 export default function DoctorPage() {
   const router = useRouter();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loginError, setLoginError] = useState('');
   const [patientId, setPatientId] = useState('');
   const [verifiedPatient, setVerifiedPatient] = useState<{ id: string; name: string } | null>(null);
   const [verifyingPatient, setVerifyingPatient] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newPatientName, setNewPatientName] = useState('');
   const [creatingPatient, setCreatingPatient] = useState(false);
-  const [procedure, setProcedure] = useState('');
-  const [customProcedure, setCustomProcedure] = useState('');
-  const [cost, setCost] = useState('');
+  const [selectedProcedure, setSelectedProcedure] = useState<typeof PROCEDURES[0] | null>(null);
   const [reason, setReason] = useState('');
   const [loadingSubmit, setLoadingSubmit] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (email === 'georgerocky809@gmail.com' && password === 'sanathdr') {
+      setIsLoggedIn(true);
+      setLoginError('');
+    } else {
+      setLoginError('Invalid credentials');
+    }
+  };
+
+  const handleSelectProcedure = (proc: typeof PROCEDURES[0]) => {
+    setSelectedProcedure(proc);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,23 +66,17 @@ export default function DoctorPage() {
       return;
     }
 
-    if (!cost || !reason) {
-      setError('Please fill in all required fields');
+    if (!selectedProcedure) {
+      setError('Please select a procedure');
       return;
     }
 
-    if (!procedure && !customProcedure) {
-      setError('Please select or enter a procedure');
+    if (!reason) {
+      setError('Please enter a reason');
       return;
     }
 
-    const finalProcedure = customProcedure || procedure;
-    const finalCost = parseFloat(cost);
-
-    if (isNaN(finalCost) || finalCost <= 0) {
-      setError('Cost must be a positive number');
-      return;
-    }
+    const finalCost = selectedProcedure.price;
 
     setLoadingSubmit(true);
 
@@ -69,7 +84,7 @@ export default function DoctorPage() {
       const billRef = doc(db!, 'bills', verifiedPatient.id);
       const billSnapshot = await getDoc(billRef);
       const procedureItem = {
-        name: finalProcedure,
+        name: selectedProcedure.name,
         cost: finalCost,
         reason,
         timestamp: Date.now(),
@@ -89,9 +104,7 @@ export default function DoctorPage() {
       }
 
       setSuccess(true);
-      setProcedure('');
-      setCustomProcedure('');
-      setCost('');
+      setSelectedProcedure(null);
       setReason('');
 
       setTimeout(() => setSuccess(false), 3000);
@@ -187,190 +200,209 @@ export default function DoctorPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
-        <div className="bg-white border-b border-blue-100 shadow-sm">
-          <div className="max-w-5xl mx-auto px-6 py-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Doctor Dashboard</h1>
-              <p className="text-gray-600 mt-2">Add a procedure to a patient's bill.</p>
-            </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <button
-                onClick={handleSignOut}
-                className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm text-gray-700 transition hover:bg-gray-50"
-              >
-                ← Back to Home
-              </button>
-            </div>
-          </div>
-        </div>
-
-      <div className="max-w-3xl mx-auto px-6 py-10">
-        <form onSubmit={handleSubmit} className="bg-white rounded-3xl shadow-lg p-8">
-          {/* Patient Verification Section */}
-          <div className="mb-6">
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Patient ID</label>
-            <div className="flex gap-3">
+      {!isLoggedIn ? (
+        <div className="flex items-center justify-center min-h-screen">
+          <form onSubmit={handleLogin} className="bg-white rounded-3xl shadow-lg p-8 w-full max-w-md">
+            <h1 className="text-2xl font-bold text-gray-900 mb-6 text-center">Doctor Login</h1>
+            <div className="mb-4">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Email</label>
               <input
-                type="text"
-                value={patientId}
-                onChange={(e) => handlePatientIdChange(e.target.value)}
-                className="flex-1 rounded-2xl border border-gray-300 px-4 py-3 text-gray-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                placeholder="Enter patient ID"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full rounded-2xl border border-gray-300 px-4 py-3 text-gray-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                placeholder="Enter email"
+                required
               />
-              <button
-                type="button"
-                onClick={handleVerifyPatient}
-                disabled={verifyingPatient || !patientId.trim()}
-                className="rounded-2xl bg-green-600 px-6 py-3 text-white font-semibold transition hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-300"
-              >
-                {verifyingPatient ? 'Verifying...' : 'Verify'}
-              </button>
             </div>
-            {verifiedPatient && (
-              <div className="mt-3 rounded-2xl bg-green-50 border border-green-200 p-3">
-                <p className="text-sm text-green-700">
-                  ✓ Patient verified: <span className="font-semibold">{verifiedPatient.name}</span>
-                </p>
+            <div className="mb-6">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Password</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full rounded-2xl border border-gray-300 px-4 py-3 text-gray-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                placeholder="Enter password"
+                required
+              />
+            </div>
+            {loginError && (
+              <div className="mb-4 rounded-2xl bg-red-50 border border-red-200 p-3 text-sm text-red-700">
+                {loginError}
               </div>
             )}
+            <button
+              type="submit"
+              className="w-full rounded-2xl bg-blue-600 px-5 py-3 text-white font-semibold transition hover:bg-blue-700"
+            >
+              Login
+            </button>
+          </form>
+        </div>
+      ) : (
+        <>
+          <div className="bg-white border-b border-blue-100 shadow-sm">
+            <div className="max-w-5xl mx-auto px-6 py-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">Doctor Dashboard</h1>
+                <p className="text-gray-600 mt-2">Add a procedure to a patient's bill.</p>
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  onClick={handleSignOut}
+                  className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm text-gray-700 transition hover:bg-gray-50"
+                >
+                  ← Back to Home
+                </button>
+              </div>
+            </div>
           </div>
 
-          {showCreateForm && !verifiedPatient && (
-            <div className="mb-6 rounded-2xl bg-blue-50 border border-blue-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Create New Patient</h3>
-              <p className="text-sm text-gray-600 mb-4">Patient ID not found. Create a new patient record?</p>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Patient ID</label>
+          <div className="max-w-3xl mx-auto px-6 py-10">
+            <form onSubmit={handleSubmit} className="bg-white rounded-3xl shadow-lg p-8">
+              {/* Patient Verification Section */}
+              <div className="mb-6">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Patient ID</label>
+                <div className="flex gap-3">
                   <input
                     type="text"
                     value={patientId}
-                    disabled
-                    className="w-full rounded-2xl border border-gray-300 px-4 py-3 text-gray-900 outline-none bg-gray-50"
+                    onChange={(e) => handlePatientIdChange(e.target.value)}
+                    className="flex-1 rounded-2xl border border-gray-300 px-4 py-3 text-gray-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                    placeholder="Enter patient ID"
                   />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Patient Name *</label>
-                  <input
-                    type="text"
-                    value={newPatientName}
-                    onChange={(e) => setNewPatientName(e.target.value)}
-                    className="w-full rounded-2xl border border-gray-300 px-4 py-3 text-gray-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                    placeholder="Enter patient name"
-                  />
-                </div>
-
-                <div className="flex gap-3">
                   <button
                     type="button"
-                    onClick={handleCreatePatient}
-                    disabled={creatingPatient || !newPatientName.trim()}
-                    className="flex-1 rounded-2xl bg-blue-600 px-5 py-3 text-white font-semibold transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+                    onClick={handleVerifyPatient}
+                    disabled={verifyingPatient || !patientId.trim()}
+                    className="rounded-2xl bg-green-600 px-6 py-3 text-white font-semibold transition hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-300"
                   >
-                    {creatingPatient ? 'Creating...' : 'Create Patient'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowCreateForm(false);
-                      setNewPatientName('');
-                      setError('');
-                    }}
-                    className="rounded-2xl border border-gray-300 px-5 py-3 text-gray-700 font-semibold transition hover:bg-gray-50"
-                  >
-                    Cancel
+                    {verifyingPatient ? 'Verifying...' : 'Verify'}
                   </button>
                 </div>
+                {verifiedPatient && (
+                  <div className="mt-3 rounded-2xl bg-green-50 border border-green-200 p-3">
+                    <p className="text-sm text-green-700">
+                      ✓ Patient verified: <span className="font-semibold">{verifiedPatient.name}</span>
+                    </p>
+                  </div>
+                )}
               </div>
-            </div>
-          )}
 
-          {verifiedPatient && (
-            <>
-              <div className="mb-6">
-                <label className="block text-sm font-semibold text-gray-700 mb-3">Select Procedure</label>
-            <div className="grid grid-cols-2 gap-3">
-              {COMMON_PROCEDURES.map((proc) => (
-                <button
-                  key={proc.name}
-                  type="button"
-                  onClick={() => setProcedure(proc.name)}
-                  className={`rounded-2xl border px-4 py-4 text-left transition ${
-                    procedure === proc.name
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-200 bg-white hover:border-blue-300'
-                  }`}
-                >
-                  <p className="font-semibold text-gray-900">{proc.name}</p>
-                  <p className="text-sm text-gray-500">{proc.category}</p>
-                </button>
-              ))}
-            </div>
+              {showCreateForm && !verifiedPatient && (
+                <div className="mb-6 rounded-2xl bg-blue-50 border border-blue-200 p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Create New Patient</h3>
+                  <p className="text-sm text-gray-600 mb-4">Patient ID not found. Create a new patient record?</p>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Patient ID</label>
+                      <input
+                        type="text"
+                        value={patientId}
+                        disabled
+                        className="w-full rounded-2xl border border-gray-300 px-4 py-3 text-gray-900 outline-none bg-gray-50"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Patient Name *</label>
+                      <input
+                        type="text"
+                        value={newPatientName}
+                        onChange={(e) => setNewPatientName(e.target.value)}
+                        className="w-full rounded-2xl border border-gray-300 px-4 py-3 text-gray-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                        placeholder="Enter patient name"
+                      />
+                    </div>
+
+                    <div className="flex gap-3">
+                      <button
+                        type="button"
+                        onClick={handleCreatePatient}
+                        disabled={creatingPatient || !newPatientName.trim()}
+                        className="flex-1 rounded-2xl bg-blue-600 px-5 py-3 text-white font-semibold transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+                      >
+                        {creatingPatient ? 'Creating...' : 'Create Patient'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowCreateForm(false);
+                          setNewPatientName('');
+                          setError('');
+                        }}
+                        className="rounded-2xl border border-gray-300 px-5 py-3 text-gray-700 font-semibold transition hover:bg-gray-50"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {verifiedPatient && (
+                <>
+                  <div className="mb-6">
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">Select Procedure</label>
+                    <div className="grid grid-cols-2 gap-3">
+                      {PROCEDURES.map((proc) => (
+                        <button
+                          key={proc.name}
+                          type="button"
+                          onClick={() => handleSelectProcedure(proc)}
+                          className={`rounded-2xl border px-4 py-4 text-left transition ${
+                            selectedProcedure?.name === proc.name
+                              ? 'border-blue-500 bg-blue-50'
+                              : 'border-gray-200 bg-white hover:border-blue-300'
+                          }`}
+                        >
+                          <p className="font-semibold text-gray-900">{proc.name}</p>
+                          <p className="text-sm text-gray-500">{proc.category}</p>
+                          <p className="text-sm font-semibold text-green-600">${proc.price}</p>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {selectedProcedure && (
+                    <div className="mb-6">
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Reason / Notes *</label>
+                      <input
+                        type="text"
+                        value={reason}
+                        onChange={(e) => setReason(e.target.value)}
+                        className="w-full rounded-2xl border border-gray-300 px-4 py-3 text-gray-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                        placeholder="Explain why this charge is being added..."
+                      />
+                    </div>
+                  )}
+                </>
+              )}
+
+              {error && (
+                <div className="mb-6 rounded-2xl bg-red-50 border border-red-200 p-4 text-sm text-red-700">
+                  {error}
+                </div>
+              )}
+
+              {success && (
+                <div className="mb-6 rounded-2xl bg-green-50 border border-green-200 p-4 text-sm text-green-700">
+                  Procedure successfully added to the bill.
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={loadingSubmit}
+                className="w-full rounded-2xl bg-blue-600 px-5 py-3 text-white font-semibold transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+              >
+                {loadingSubmit ? 'Saving procedure...' : 'Add Procedure to Bill'}
+              </button>
+            </form>
           </div>
-
-          <div className="mb-6">
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Or Enter Custom Procedure</label>
-            <input
-              type="text"
-              value={customProcedure}
-              onChange={(e) => {
-                setCustomProcedure(e.target.value);
-                setProcedure('');
-              }}
-              className="w-full rounded-2xl border border-gray-300 px-4 py-3 text-gray-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-              placeholder="Enter custom procedure name"
-            />
-          </div>
-
-          <div className="mb-6 grid gap-6 md:grid-cols-2">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Cost ($) *</label>
-              <input
-                type="number"
-                step="0.01"
-                value={cost}
-                onChange={(e) => setCost(e.target.value)}
-                className="w-full rounded-2xl border border-gray-300 px-4 py-3 text-gray-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                placeholder="0.00"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Reason / Notes *</label>
-              <input
-                type="text"
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                className="w-full rounded-2xl border border-gray-300 px-4 py-3 text-gray-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                placeholder="Explain why this charge is being added..."
-              />
-            </div>
-          </div>
-            </>
-          )}
-
-          {error && (
-            <div className="mb-6 rounded-2xl bg-red-50 border border-red-200 p-4 text-sm text-red-700">
-              {error}
-            </div>
-          )}
-
-          {success && (
-            <div className="mb-6 rounded-2xl bg-green-50 border border-green-200 p-4 text-sm text-green-700">
-              Procedure successfully added to the bill.
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={loadingSubmit}
-            className="w-full rounded-2xl bg-blue-600 px-5 py-3 text-white font-semibold transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
-          >
-            {loadingSubmit ? 'Saving procedure...' : 'Add Procedure to Bill'}
-          </button>
-        </form>
-      </div>
+        </>
+      )}
     </div>
   );
 }
