@@ -1,30 +1,27 @@
 'use client';
 
 import { useState } from 'react';
-import { BillItem } from '@/lib/types';
-import { useBillListener } from '@/lib/hooks';
-
-interface BillItemWithExplanation extends BillItem {
-  explanation?: string;
-  loadingExplanation?: boolean;
-}
+import { useProtectedPage, useBillListener } from '@/lib/hooks';
+import { signOutUser } from '@/lib/auth';
+import { useRouter } from 'next/navigation';
 
 export default function PatientPage() {
-  const [patientId] = useState('patient-demo-001');
-  const { items, total, loading, error } = useBillListener(patientId);
-  const [expandedItems, setExpandedItems] = useState<{
-    [key: string]: BillItemWithExplanation;
-  }>({});
-  const [lastNewItem, setLastNewItem] = useState<string | null>(null);
+  const router = useRouter();
+  const { userProfile, loading } = useProtectedPage('patient');
+  const patientId = userProfile?.uid ?? '';
+  const { procedures, total, loading: billLoading, error } = useBillListener(patientId);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedProcedure, setSelectedProcedure] = useState('');
+  const [explanation, setExplanation] = useState('');
+  const [modalLoading, setModalLoading] = useState(false);
+  const [modalError, setModalError] = useState('');
 
-  const getExplanation = async (itemId: string, procedure: string) => {
-    setExpandedItems((prev) => ({
-      ...prev,
-      [itemId]: {
-        ...prev[itemId],
-        loadingExplanation: true,
-      },
-    }));
+  const handleExplain = async (procedure: string) => {
+    setModalOpen(true);
+    setSelectedProcedure(procedure);
+    setExplanation('');
+    setModalError('');
+    setModalLoading(true);
 
     try {
       const response = await fetch('/api/explain', {
@@ -34,32 +31,32 @@ export default function PatientPage() {
       });
 
       const data = await response.json();
-      setExpandedItems((prev) => ({
-        ...prev,
-        [itemId]: {
-          ...prev[itemId],
-          explanation: data.explanation,
-          loadingExplanation: false,
-        },
-      }));
+      setExplanation(data.explanation || 'No explanation returned.');
     } catch (err) {
-      setExpandedItems((prev) => ({
-        ...prev,
-        [itemId]: {
-          ...prev[itemId],
-          explanation: 'Could not load explanation',
-          loadingExplanation: false,
-        },
-      }));
+      setModalError(err instanceof Error ? err.message : 'Could not load explanation');
+    } finally {
+      setModalLoading(false);
     }
   };
 
-  if (loading) {
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    setSelectedProcedure('');
+    setExplanation('');
+    setModalError('');
+  };
+
+  const handleSignOut = async () => {
+    await signOutUser();
+    router.replace('/');
+  };
+
+  if (loading || !userProfile) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-blue-50 to-white">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-blue-50 to-white">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading your bill...</p>
+          <p className="text-gray-600">Checking your access...</p>
         </div>
       </div>
     );
@@ -67,100 +64,100 @@ export default function PatientPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
-      {/* Header */}
       <div className="bg-white border-b border-blue-100 shadow-sm">
-        <div className="max-w-4xl mx-auto px-6 py-8">
-          <h1 className="text-3xl font-bold text-gray-900">My Medical Bill</h1>
-          <p className="text-gray-600 mt-2">Your healthcare charges explained clearly</p>
+        <div className="max-w-5xl mx-auto px-6 py-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">My Medical Bill</h1>
+            <p className="text-gray-600 mt-2">Your healthcare charges explained clearly.</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <p className="text-sm text-gray-700">Signed in as <span className="font-semibold">{userProfile.name}</span></p>
+            <button
+              onClick={handleSignOut}
+              className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm text-gray-700 transition hover:bg-gray-50"
+            >
+              Sign out
+            </button>
+          </div>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-6 py-8">
-        {/* Running Total Card */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg p-8 mb-8 text-white shadow-lg">
-          <p className="text-blue-100 text-sm font-semibold uppercase tracking-wide">Total Bill Amount</p>
-          <p className="text-5xl font-bold mt-2">${total.toFixed(2)}</p>
-          <p className="text-blue-100 mt-4">{items.length} charge{items.length !== 1 ? 's' : ''}</p>
+      <div className="max-w-5xl mx-auto px-6 py-10">
+        <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-3xl p-8 mb-8 text-white shadow-lg">
+          <p className="text-sm uppercase tracking-[0.25em] text-blue-100">Total Bill Amount</p>
+          <p className="text-5xl font-bold mt-5">${total.toFixed(2)}</p>
+          <p className="text-blue-100 mt-4">{procedures.length} procedure{procedures.length !== 1 ? 's' : ''}</p>
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-            <p className="text-red-800">{error}</p>
+          <div className="mb-6 rounded-3xl border border-red-200 bg-red-50 p-5 text-sm text-red-700">
+            {error}
           </div>
         )}
 
-        {items.length === 0 ? (
-          <div className="bg-blue-50 border-2 border-blue-200 border-dashed rounded-lg p-12 text-center">
+        {procedures.length === 0 ? (
+          <div className="rounded-3xl border border-blue-200 bg-blue-50 p-12 text-center text-gray-700">
             <div className="text-4xl mb-4">📋</div>
-            <p className="text-gray-700 font-semibold">No charges yet</p>
-            <p className="text-gray-600 mt-2">Your charges will appear here as they are added</p>
+            <p className="font-semibold">No procedures yet</p>
+            <p className="mt-2">Your charges will appear instantly as your doctor adds them.</p>
           </div>
         ) : (
-          <div className="space-y-4">
-            {items.map((item) => (
-              <div
-                key={item.id}
-                className={`border-l-4 border-blue-500 bg-white rounded-lg p-6 shadow hover:shadow-md transition-shadow ${
-                  lastNewItem === item.id ? 'ring-2 ring-green-400 animate-pulse' : ''
-                }`}
-              >
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-gray-900">{item.procedure}</h3>
-                    <p className="text-gray-600 text-sm mt-1">{item.reason}</p>
-                    {item.status === 'pending' && (
-                      <span className="inline-block mt-2 px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-semibold rounded">
-                        Pending
-                      </span>
-                    )}
+          <div className="space-y-6">
+            {procedures.map((item, index) => (
+              <div key={`${item.name}-${item.timestamp}-${index}`} className="rounded-3xl border border-blue-100 bg-white p-6 shadow-sm">
+                <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                  <div>
+                    <h2 className="text-xl font-semibold text-gray-900">{item.name}</h2>
+                    <p className="mt-2 text-gray-600">{item.reason}</p>
+                    <p className="mt-3 text-sm text-gray-500">{new Date(item.timestamp).toLocaleDateString()}</p>
                   </div>
-                  <div className="text-right ml-4">
-                    <p className="text-2xl font-bold text-blue-600">${item.cost.toFixed(2)}</p>
-                    <p className="text-gray-500 text-xs mt-1">
-                      {new Date(item.timestamp).toLocaleDateString()}
-                    </p>
+                  <div className="text-right">
+                    <p className="text-3xl font-bold text-blue-600">${item.cost.toFixed(2)}</p>
+                    <button
+                      onClick={() => handleExplain(item.name)}
+                      className="mt-4 inline-flex items-center gap-2 rounded-full bg-blue-100 px-4 py-2 text-sm font-semibold text-blue-700 transition hover:bg-blue-200"
+                    >
+                      💡 What is this?
+                    </button>
                   </div>
                 </div>
-
-                {/* AI Explanation Button */}
-                <button
-                  onClick={() =>
-                    expandedItems[item.id]?.explanation
-                      ? setExpandedItems((prev) => {
-                          const next = { ...prev };
-                          delete next[item.id];
-                          return next;
-                        })
-                      : getExplanation(item.id, item.procedure)
-                  }
-                  className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 font-semibold rounded transition-colors"
-                >
-                  <span>💡</span>
-                  {expandedItems[item.id]?.loadingExplanation
-                    ? 'Loading...'
-                    : expandedItems[item.id]?.explanation
-                      ? 'Hide explanation'
-                      : 'What is this?'}
-                </button>
-
-                {/* AI Explanation */}
-                {expandedItems[item.id]?.explanation && (
-                  <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                    <p className="text-gray-800 leading-relaxed">{expandedItems[item.id].explanation}</p>
-                  </div>
-                )}
               </div>
             ))}
           </div>
         )}
-
-        {/* Demo Info */}
-        <div className="mt-12 bg-gray-50 rounded-lg p-6 border border-gray-200">
-          <p className="text-sm text-gray-600">
-            <span className="font-semibold">Demo Mode:</span> Viewing charges for patient ID: <code className="bg-gray-200 px-2 py-1 rounded text-xs">{patientId}</code>
-          </p>
-        </div>
       </div>
+
+      {modalOpen && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-4 py-8">
+          <div className="w-full max-w-2xl rounded-3xl bg-white p-8 shadow-2xl">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-sm uppercase tracking-[0.2em] text-blue-600">AI Explanation</p>
+                <h2 className="mt-2 text-2xl font-bold text-gray-900">{selectedProcedure}</h2>
+              </div>
+              <button
+                onClick={handleCloseModal}
+                className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              >
+                Close
+              </button>
+            </div>
+
+            <div className="mt-8 rounded-3xl border border-blue-100 bg-blue-50 p-6">
+              {modalLoading ? (
+                <div className="flex items-center gap-3 text-gray-700">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  <p>Loading explanation…</p>
+                </div>
+              ) : modalError ? (
+                <p className="text-sm text-red-700">{modalError}</p>
+              ) : (
+                <p className="text-gray-800 leading-relaxed">{explanation}</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

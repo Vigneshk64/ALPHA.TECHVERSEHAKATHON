@@ -1,17 +1,24 @@
-export interface BillItem {
-  id: string;
-  procedure: string;
+export type UserRole = 'patient' | 'doctor' | 'billing';
+
+export interface UserProfile {
+  uid: string;
+  email: string;
+  name: string;
+  role: UserRole;
+}
+
+export interface BillProcedure {
+  name: string;
   cost: number;
   reason: string;
   timestamp: number;
-  status?: 'pending' | 'completed';
 }
 
-export interface PatientBill {
+export interface BillDocument {
+  id: string;
   patientId: string;
-  items: BillItem[];
-  total: number;
-  lastUpdated: number;
+  procedures: BillProcedure[];
+  totalAmount: number;
 }
 
 export interface Procedure {
