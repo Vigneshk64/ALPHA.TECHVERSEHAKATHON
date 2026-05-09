@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, setDoc, updateDoc, arrayUnion, increment } from 'firebase/firestore';
 import { useProtectedPage } from '@/lib/hooks';
-import { signOutUser } from '@/lib/auth';
+import { signOutUser, verifyPatient } from '@/lib/auth';
 
 const COMMON_PROCEDURES = [
   { name: 'X-Ray', category: 'Imaging' },
@@ -24,6 +24,8 @@ export default function DoctorPage() {
   const router = useRouter();
   const { userProfile, loading } = useProtectedPage('doctor');
   const [patientId, setPatientId] = useState('');
+  const [verifiedPatient, setVerifiedPatient] = useState<{ id: string; name: string } | null>(null);
+  const [verifyingPatient, setVerifyingPatient] = useState(false);
   const [procedure, setProcedure] = useState('');
   const [customProcedure, setCustomProcedure] = useState('');
   const [cost, setCost] = useState('');
@@ -37,7 +39,12 @@ export default function DoctorPage() {
     setError('');
     setSuccess(false);
 
-    if (!patientId.trim() || !cost || !reason) {
+    if (!verifiedPatient) {
+      setError('Please verify the patient ID first');
+      return;
+    }
+
+    if (!cost || !reason) {
       setError('Please fill in all required fields');
       return;
     }
@@ -58,7 +65,7 @@ export default function DoctorPage() {
     setLoadingSubmit(true);
 
     try {
-      const billRef = doc(db!, 'bills', patientId.trim());
+      const billRef = doc(db!, 'bills', verifiedPatient.id);
       const billSnapshot = await getDoc(billRef);
       const procedureItem = {
         name: finalProcedure,
@@ -74,14 +81,13 @@ export default function DoctorPage() {
         });
       } else {
         await setDoc(billRef, {
-          patientId: patientId.trim(),
+          patientId: verifiedPatient.id,
           procedures: [procedureItem],
           totalAmount: finalCost,
         });
       }
 
       setSuccess(true);
-      setPatientId(patientId.trim());
       setProcedure('');
       setCustomProcedure('');
       setCost('');
@@ -95,9 +101,44 @@ export default function DoctorPage() {
     }
   };
 
+  const handleVerifyPatient = async () => {
+    if (!patientId.trim()) {
+      setError('Please enter a patient ID');
+      return;
+    }
+
+    setVerifyingPatient(true);
+    setError('');
+    setVerifiedPatient(null);
+
+    try {
+      const result = await verifyPatient(patientId.trim());
+      if (result.exists && result.name) {
+        setVerifiedPatient({ id: patientId.trim(), name: result.name });
+      } else {
+        setError('Patient ID not found. Please check the ID and try again.');
+      }
+    } catch (err) {
+      setError('Failed to verify patient. Please try again.');
+    } finally {
+      setVerifyingPatient(false);
+    }
+  };
+
+  const handlePatientIdChange = (newId: string) => {
+    setPatientId(newId);
+    if (verifiedPatient && verifiedPatient.id !== newId.trim()) {
+      setVerifiedPatient(null);
+    }
+  };
+
   const handleSignOut = async () => {
-    await signOutUser();
-    router.replace('/');
+    try {
+      await signOutUser();
+      router.replace('/');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to sign out');
+    }
   };
 
   if (loading || !userProfile) {
@@ -133,15 +174,33 @@ export default function DoctorPage() {
 
       <div className="max-w-3xl mx-auto px-6 py-10">
         <form onSubmit={handleSubmit} className="bg-white rounded-3xl shadow-lg p-8">
+          {/* Patient Verification Section */}
           <div className="mb-6">
             <label className="block text-sm font-semibold text-gray-700 mb-2">Patient ID</label>
-            <input
-              type="text"
-              value={patientId}
-              onChange={(e) => setPatientId(e.target.value)}
-              className="w-full rounded-2xl border border-gray-300 px-4 py-3 text-gray-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-              placeholder="Enter patient ID"
-            />
+            <div className="flex gap-3">
+              <input
+                type="text"
+                value={patientId}
+                onChange={(e) => handlePatientIdChange(e.target.value)}
+                className="flex-1 rounded-2xl border border-gray-300 px-4 py-3 text-gray-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                placeholder="Enter patient ID"
+              />
+              <button
+                type="button"
+                onClick={handleVerifyPatient}
+                disabled={verifyingPatient || !patientId.trim()}
+                className="rounded-2xl bg-green-600 px-6 py-3 text-white font-semibold transition hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+              >
+                {verifyingPatient ? 'Verifying...' : 'Verify'}
+              </button>
+            </div>
+            {verifiedPatient && (
+              <div className="mt-3 rounded-2xl bg-green-50 border border-green-200 p-3">
+                <p className="text-sm text-green-700">
+                  ✓ Patient verified: <span className="font-semibold">{verifiedPatient.name}</span>
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="mb-6">

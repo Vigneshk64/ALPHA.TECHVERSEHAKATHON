@@ -5,6 +5,7 @@ export interface UserProfile {
   email: string;
   name: string;
   role: UserRole;
+  createdAt: number;
 }
 
 export interface BillProcedure {
