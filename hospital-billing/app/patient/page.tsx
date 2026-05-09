@@ -8,7 +8,7 @@ export default function PatientPage() {
   const router = useRouter();
   const [patientId, setPatientId] = useState('');
   const [enteredPatientId, setEnteredPatientId] = useState('');
-  const { procedures, total, loading: billLoading, error } = useBillListener(enteredPatientId);
+  const { procedures, total, error } = useBillListener(enteredPatientId);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedProcedure, setSelectedProcedure] = useState('');
   const [explanation, setExplanation] = useState('');
@@ -128,10 +128,13 @@ export default function PatientPage() {
       </div>
 
       <div className="max-w-5xl mx-auto px-6 py-10">
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-3xl p-8 mb-8 text-white shadow-lg">
-          <p className="text-sm uppercase tracking-[0.25em] text-blue-100">Total Bill Amount</p>
-          <p className="text-5xl font-bold mt-5">${total.toFixed(2)}</p>
-          <p className="text-blue-100 mt-4">{procedures.length} procedure{procedures.length !== 1 ? 's' : ''}</p>
+        <div className="relative mb-8 overflow-hidden rounded-3xl bg-slate-950 p-8 text-white shadow-2xl">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(34,211,238,0.35),transparent_35%),linear-gradient(135deg,rgba(37,99,235,0.95),rgba(15,23,42,0.98))]" />
+          <div className="relative">
+            <p className="text-sm uppercase tracking-[0.25em] text-blue-100">Total Bill Amount</p>
+            <p className="text-5xl font-bold mt-5">${total.toFixed(2)}</p>
+            <p className="text-blue-100 mt-4">{procedures.length} charge{procedures.length !== 1 ? 's' : ''} from hospital catalog</p>
+          </div>
         </div>
 
         {error && (
@@ -149,10 +152,22 @@ export default function PatientPage() {
         ) : (
           <div className="space-y-6">
             {procedures.map((item, index) => (
-              <div key={`${item.name}-${item.timestamp}-${index}`} className="rounded-3xl border border-blue-100 bg-white p-6 shadow-sm">
+              <div key={`${item.name}-${item.timestamp}-${index}`} className="rounded-3xl border border-blue-100 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl">
                 <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                   <div>
-                    <h2 className="text-xl font-semibold text-gray-900">{item.name}</h2>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h2 className="text-xl font-semibold text-gray-900">{item.name}</h2>
+                      {item.type && (
+                        <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold capitalize text-blue-700">
+                          {item.type}
+                        </span>
+                      )}
+                      {item.category && (
+                        <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-700">
+                          {item.category}
+                        </span>
+                      )}
+                    </div>
                     <p className="mt-2 text-gray-600">{item.reason}</p>
                     <p className="mt-3 text-sm text-gray-500">{new Date(item.timestamp).toLocaleDateString()}</p>
                   </div>

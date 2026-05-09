@@ -22,8 +22,6 @@ export default function RoleSelectionPage() {
           router.replace('/doctor');
         } else if (user.role === 'patient') {
           router.replace('/patient');
-        } else if (user.role === 'billing') {
-          router.replace('/billing');
         }
       }
     }
@@ -52,8 +50,6 @@ export default function RoleSelectionPage() {
         router.push('/doctor');
       } else if (role === 'patient') {
         router.push('/patient');
-      } else if (role === 'billing') {
-        router.push('/billing');
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save role');
@@ -76,7 +72,7 @@ export default function RoleSelectionPage() {
           </div>
         )}
 
-        <div className="grid md:grid-cols-3 gap-6 mb-8">
+        <div className="grid md:grid-cols-2 gap-6 mb-8">
           <button
             onClick={() => handleSelectRole('patient')}
             disabled={saving}
@@ -112,25 +108,6 @@ export default function RoleSelectionPage() {
             </p>
             <div className="text-xs text-green-600 font-semibold">
               {selectedRole === 'doctor' && saving ? 'Setting up...' : 'Click to select'}
-            </div>
-          </button>
-
-          <button
-            onClick={() => handleSelectRole('billing')}
-            disabled={saving}
-            className={`p-6 rounded-lg border-2 transition-all text-left ${
-              selectedRole === 'billing'
-                ? 'border-purple-500 bg-purple-50'
-                : 'border-gray-200 hover:border-purple-300 bg-white'
-            } ${saving ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-          >
-            <div className="text-4xl mb-3">📋</div>
-            <h3 className="text-lg font-bold text-gray-900 mb-2">Billing Staff</h3>
-            <p className="text-sm text-gray-600 mb-4">
-              Generate final bills, manage invoices, and export patient billing statements.
-            </p>
-            <div className="text-xs text-purple-600 font-semibold">
-              {selectedRole === 'billing' && saving ? 'Setting up...' : 'Click to select'}
             </div>
           </button>
         </div>

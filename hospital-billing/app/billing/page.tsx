@@ -11,22 +11,16 @@ export default function BillingSummaryPage() {
   const [error, setError] = useState('');
   const { procedures, total, loading: billLoading, error: billError } = useBillListener(activePatientId);
 
-  const handlePatientIdSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (patientId.trim()) {
-      setActivePatientId(patientId.trim());
-      setError('');
-    }
-  };
-
   const handlePrint = () => {
     window.print();
   };
 
   const handleDownload = () => {
-    const headers = ['Procedure', 'Cost', 'Reason', 'Date'];
+    const headers = ['Charge', 'Type', 'Category', 'Cost', 'Reason', 'Date'];
     const rows = procedures.map((item) => [
       item.name,
+      item.type || '',
+      item.category || '',
       `$${item.cost.toFixed(2)}`,
       item.reason,
       new Date(item.timestamp).toLocaleDateString(),
@@ -61,8 +55,8 @@ export default function BillingSummaryPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white print:bg-white">
-      <div className="bg-white border-b border-gray-200">
+    <div className="min-h-screen bg-slate-50 print:bg-white">
+      <div className="bg-white/90 border-b border-gray-200 shadow-sm backdrop-blur">
         <div className="max-w-5xl mx-auto px-6 py-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Billing Summary</h1>
@@ -80,7 +74,7 @@ export default function BillingSummaryPage() {
       </div>
 
       <div className="max-w-5xl mx-auto px-6 py-10">
-        <div className="mb-10 rounded-3xl border border-blue-100 bg-blue-50 p-6 shadow-sm">
+        <div className="mb-10 rounded-3xl border border-blue-100 bg-gradient-to-br from-blue-50 to-cyan-50 p-6 shadow-sm">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
               <p className="text-sm uppercase tracking-[0.25em] text-blue-700">Patient Bill Lookup</p>
@@ -145,7 +139,7 @@ export default function BillingSummaryPage() {
             <p className="mt-2">This patient does not have any billing records yet.</p>
           </div>
         ) : (
-          <div className="rounded-3xl border border-gray-200 bg-white p-8 shadow-sm">
+          <div className="rounded-3xl border border-gray-200 bg-white p-8 shadow-xl shadow-blue-950/5">
             <div className="mb-10 text-center">
               <h2 className="text-3xl font-bold text-gray-900">HEALTHCARE HOSPITAL</h2>
               <p className="mt-2 text-gray-600">123 Medical Avenue, Healthcare City, HC 12345</p>
@@ -167,7 +161,9 @@ export default function BillingSummaryPage() {
               <table className="w-full border-collapse text-left">
                 <thead>
                   <tr className="border-b border-gray-200">
-                    <th className="py-3 px-4 text-sm font-semibold text-gray-900">Procedure</th>
+                    <th className="py-3 px-4 text-sm font-semibold text-gray-900">Charge</th>
+                    <th className="py-3 px-4 text-sm font-semibold text-gray-900">Type</th>
+                    <th className="py-3 px-4 text-sm font-semibold text-gray-900">Category</th>
                     <th className="py-3 px-4 text-sm font-semibold text-gray-900">Reason</th>
                     <th className="py-3 px-4 text-sm font-semibold text-gray-900">Date</th>
                     <th className="py-3 px-4 text-right text-sm font-semibold text-gray-900">Cost</th>
@@ -177,6 +173,8 @@ export default function BillingSummaryPage() {
                   {procedures.map((item, index) => (
                     <tr key={`${item.name}-${item.timestamp}-${index}`} className="border-b border-gray-100">
                       <td className="py-4 px-4 text-gray-900">{item.name}</td>
+                      <td className="py-4 px-4 text-gray-600 capitalize">{item.type || 'Charge'}</td>
+                      <td className="py-4 px-4 text-gray-600">{item.category || '-'}</td>
                       <td className="py-4 px-4 text-gray-600">{item.reason}</td>
                       <td className="py-4 px-4 text-gray-500">{new Date(item.timestamp).toLocaleDateString()}</td>
                       <td className="py-4 px-4 text-right font-semibold text-gray-900">${item.cost.toFixed(2)}</td>

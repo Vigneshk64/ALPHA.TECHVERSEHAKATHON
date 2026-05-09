@@ -13,6 +13,10 @@ export interface BillProcedure {
   cost: number;
   reason: string;
   timestamp: number;
+  category?: string;
+  type?: 'procedure' | 'medicine' | 'room' | 'transport' | 'consultation';
+  catalogId?: string;
+  doctorPriced?: boolean;
 }
 
 export interface BillDocument {
@@ -27,6 +31,21 @@ export interface Procedure {
   name: string;
   defaultCost: number;
   category: string;
+}
+
+export interface HospitalCatalogItem {
+  id: string;
+  name: string;
+  price: number;
+  category: string;
+  type: 'procedure' | 'medicine' | 'room' | 'transport' | 'consultation';
+  editableByDoctor?: boolean;
+}
+
+export interface HospitalPriceCatalog {
+  items: HospitalCatalogItem[];
+  updatedAt: number;
+  version: number;
 }
 
 export interface User {

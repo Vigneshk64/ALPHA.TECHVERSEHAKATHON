@@ -19,9 +19,6 @@ export function useBillListener(patientId: string) {
 
   useEffect(() => {
     if (!patientId) {
-      setProcedures([]);
-      setTotal(0);
-      setLoading(false);
       return;
     }
 
@@ -48,6 +45,10 @@ export function useBillListener(patientId: string) {
 
     return () => unsubscribe();
   }, [patientId]);
+
+  if (!patientId) {
+    return { procedures: [], total: 0, loading: false, error };
+  }
 
   return { procedures, total, loading, error };
 }
