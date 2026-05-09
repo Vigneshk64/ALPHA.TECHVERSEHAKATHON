@@ -24,6 +24,9 @@ export default function DoctorPage() {
   const [patientId, setPatientId] = useState('');
   const [verifiedPatient, setVerifiedPatient] = useState<{ id: string; name: string } | null>(null);
   const [verifyingPatient, setVerifyingPatient] = useState(false);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [newPatientName, setNewPatientName] = useState('');
+  const [creatingPatient, setCreatingPatient] = useState(false);
   const [procedure, setProcedure] = useState('');
   const [customProcedure, setCustomProcedure] = useState('');
   const [cost, setCost] = useState('');
@@ -108,13 +111,16 @@ export default function DoctorPage() {
     setVerifyingPatient(true);
     setError('');
     setVerifiedPatient(null);
+    setShowCreateForm(false);
+    setNewPatientName('');
 
     try {
       const result = await verifyPatient(patientId.trim());
       if (result.exists && result.name) {
         setVerifiedPatient({ id: patientId.trim(), name: result.name });
       } else {
-        setError('Patient ID not found. Please check the ID and try again.');
+        setShowCreateForm(true);
+        setError('');
       }
     } catch (err) {
       setError('Failed to verify patient. Please try again.');
@@ -123,10 +129,55 @@ export default function DoctorPage() {
     }
   };
 
+  const handleCreatePatient = async () => {
+    if (!newPatientName.trim()) {
+      setError('Please enter patient name');
+      return;
+    }
+
+    setCreatingPatient(true);
+    setError('');
+
+    try {
+      const trimmedPatientId = patientId.trim();
+      const timestamp = Date.now();
+
+      // Create user document
+      const userDocRef = doc(db!, 'users', trimmedPatientId);
+      await setDoc(userDocRef, {
+        patientId: trimmedPatientId,
+        name: newPatientName.trim(),
+        role: 'patient',
+        createdBy: 'doctor',
+        createdAt: timestamp,
+      });
+
+      // Create empty bill document
+      const billDocRef = doc(db!, 'bills', trimmedPatientId);
+      await setDoc(billDocRef, {
+        patientId: trimmedPatientId,
+        procedures: [],
+        totalAmount: 0,
+      });
+
+      // Set verified patient and show success
+      setVerifiedPatient({ id: trimmedPatientId, name: newPatientName.trim() });
+      setShowCreateForm(false);
+      setNewPatientName('');
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create patient');
+    } finally {
+      setCreatingPatient(false);
+    }
+  };
+
   const handlePatientIdChange = (newId: string) => {
     setPatientId(newId);
     if (verifiedPatient && verifiedPatient.id !== newId.trim()) {
       setVerifiedPatient(null);
+      setShowCreateForm(false);
     }
   };
 
@@ -184,8 +235,62 @@ export default function DoctorPage() {
             )}
           </div>
 
-          <div className="mb-6">
-            <label className="block text-sm font-semibold text-gray-700 mb-3">Select Procedure</label>
+          {showCreateForm && !verifiedPatient && (
+            <div className="mb-6 rounded-2xl bg-blue-50 border border-blue-200 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Create New Patient</h3>
+              <p className="text-sm text-gray-600 mb-4">Patient ID not found. Create a new patient record?</p>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Patient ID</label>
+                  <input
+                    type="text"
+                    value={patientId}
+                    disabled
+                    className="w-full rounded-2xl border border-gray-300 px-4 py-3 text-gray-900 outline-none bg-gray-50"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Patient Name *</label>
+                  <input
+                    type="text"
+                    value={newPatientName}
+                    onChange={(e) => setNewPatientName(e.target.value)}
+                    className="w-full rounded-2xl border border-gray-300 px-4 py-3 text-gray-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                    placeholder="Enter patient name"
+                  />
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={handleCreatePatient}
+                    disabled={creatingPatient || !newPatientName.trim()}
+                    className="flex-1 rounded-2xl bg-blue-600 px-5 py-3 text-white font-semibold transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+                  >
+                    {creatingPatient ? 'Creating...' : 'Create Patient'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowCreateForm(false);
+                      setNewPatientName('');
+                      setError('');
+                    }}
+                    className="rounded-2xl border border-gray-300 px-5 py-3 text-gray-700 font-semibold transition hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {verifiedPatient && (
+            <>
+              <div className="mb-6">
+                <label className="block text-sm font-semibold text-gray-700 mb-3">Select Procedure</label>
             <div className="grid grid-cols-2 gap-3">
               {COMMON_PROCEDURES.map((proc) => (
                 <button
@@ -242,6 +347,8 @@ export default function DoctorPage() {
               />
             </div>
           </div>
+            </>
+          )}
 
           {error && (
             <div className="mb-6 rounded-2xl bg-red-50 border border-red-200 p-4 text-sm text-red-700">
