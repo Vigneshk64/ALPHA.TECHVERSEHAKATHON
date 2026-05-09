@@ -2,16 +2,22 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useProtectedPage, useBillListener } from '@/lib/hooks';
-import { signOutUser } from '@/lib/auth';
+import { useBillListener } from '@/lib/hooks';
 
 export default function BillingSummaryPage() {
   const router = useRouter();
-  const { userProfile, loading } = useProtectedPage('billing');
   const [patientId, setPatientId] = useState('');
   const [activePatientId, setActivePatientId] = useState('');
   const [error, setError] = useState('');
   const { procedures, total, loading: billLoading, error: billError } = useBillListener(activePatientId);
+
+  const handlePatientIdSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (patientId.trim()) {
+      setActivePatientId(patientId.trim());
+      setError('');
+    }
+  };
 
   const handlePrint = () => {
     window.print();
@@ -50,21 +56,9 @@ export default function BillingSummaryPage() {
     setActivePatientId(patientId.trim());
   };
 
-  const handleSignOut = async () => {
-    await signOutUser();
+  const handleSignOut = () => {
     router.replace('/');
   };
-
-  if (loading || !userProfile) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-blue-50 to-white">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Checking your access...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-white print:bg-white">
@@ -75,12 +69,11 @@ export default function BillingSummaryPage() {
             <p className="text-gray-600 mt-2">Search a patient bill and export a final statement.</p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <p className="text-sm text-gray-700">Signed in as <span className="font-semibold">{userProfile.name}</span></p>
             <button
               onClick={handleSignOut}
               className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm text-gray-700 transition hover:bg-gray-50"
             >
-              Sign out
+              ← Back to Home
             </button>
           </div>
         </div>

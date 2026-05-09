@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, setDoc, updateDoc, arrayUnion, increment } from 'firebase/firestore';
-import { useProtectedPage } from '@/lib/hooks';
 import { signOutUser, verifyPatient } from '@/lib/auth';
 
 const COMMON_PROCEDURES = [
@@ -22,7 +21,6 @@ const COMMON_PROCEDURES = [
 
 export default function DoctorPage() {
   const router = useRouter();
-  const { userProfile, loading } = useProtectedPage('doctor');
   const [patientId, setPatientId] = useState('');
   const [verifiedPatient, setVerifiedPatient] = useState<{ id: string; name: string } | null>(null);
   const [verifyingPatient, setVerifyingPatient] = useState(false);
@@ -133,44 +131,27 @@ export default function DoctorPage() {
   };
 
   const handleSignOut = async () => {
-    try {
-      await signOutUser();
-      router.replace('/');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to sign out');
-    }
+    router.replace('/');
   };
-
-  if (loading || !userProfile) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-blue-50 to-white">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Checking your access...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
-      <div className="bg-white border-b border-blue-100 shadow-sm">
-        <div className="max-w-5xl mx-auto px-6 py-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Doctor Dashboard</h1>
-            <p className="text-gray-600 mt-2">Add a procedure to a patient's bill.</p>
-          </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <p className="text-sm text-gray-700">Signed in as <span className="font-semibold">{userProfile.name}</span></p>
-            <button
-              onClick={handleSignOut}
-              className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm text-gray-700 transition hover:bg-gray-50"
-            >
-              Sign out
-            </button>
+        <div className="bg-white border-b border-blue-100 shadow-sm">
+          <div className="max-w-5xl mx-auto px-6 py-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Doctor Dashboard</h1>
+              <p className="text-gray-600 mt-2">Add a procedure to a patient's bill.</p>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                onClick={handleSignOut}
+                className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm text-gray-700 transition hover:bg-gray-50"
+              >
+                ← Back to Home
+              </button>
+            </div>
           </div>
         </div>
-      </div>
 
       <div className="max-w-3xl mx-auto px-6 py-10">
         <form onSubmit={handleSubmit} className="bg-white rounded-3xl shadow-lg p-8">

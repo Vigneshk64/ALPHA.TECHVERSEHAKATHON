@@ -1,20 +1,26 @@
 'use client';
 
 import { useState } from 'react';
-import { useProtectedPage, useBillListener } from '@/lib/hooks';
-import { signOutUser } from '@/lib/auth';
+import { useBillListener } from '@/lib/hooks';
 import { useRouter } from 'next/navigation';
 
 export default function PatientPage() {
   const router = useRouter();
-  const { userProfile, loading } = useProtectedPage('patient');
-  const patientId = userProfile?.uid ?? '';
-  const { procedures, total, loading: billLoading, error } = useBillListener(patientId);
+  const [patientId, setPatientId] = useState('');
+  const [enteredPatientId, setEnteredPatientId] = useState('');
+  const { procedures, total, loading: billLoading, error } = useBillListener(enteredPatientId);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedProcedure, setSelectedProcedure] = useState('');
   const [explanation, setExplanation] = useState('');
   const [modalLoading, setModalLoading] = useState(false);
   const [modalError, setModalError] = useState('');
+
+  const handlePatientIdSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (patientId.trim()) {
+      setEnteredPatientId(patientId.trim());
+    }
+  };
 
   const handleExplain = async (procedure: string) => {
     setModalOpen(true);
@@ -46,17 +52,50 @@ export default function PatientPage() {
     setModalError('');
   };
 
-  const handleSignOut = async () => {
-    await signOutUser();
+  const handleSignOut = () => {
     router.replace('/');
   };
 
-  if (loading || !userProfile) {
+  if (!enteredPatientId) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-blue-50 to-white">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Checking your access...</p>
+      <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
+        <div className="bg-white border-b border-blue-100 shadow-sm">
+          <div className="max-w-5xl mx-auto px-6 py-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Patient Portal</h1>
+              <p className="text-gray-600 mt-2">Enter your patient ID to view your medical bill.</p>
+            </div>
+            <button
+              onClick={handleSignOut}
+              className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm text-gray-700 transition hover:bg-gray-50"
+            >
+              ← Back to Home
+            </button>
+          </div>
+        </div>
+
+        <div className="max-w-md mx-auto px-6 py-16">
+          <div className="bg-white rounded-3xl shadow-lg p-8">
+            <form onSubmit={handlePatientIdSubmit} className="space-y-6">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Patient ID</label>
+                <input
+                  type="text"
+                  value={patientId}
+                  onChange={(e) => setPatientId(e.target.value)}
+                  className="w-full rounded-2xl border border-gray-300 px-4 py-3 text-gray-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  placeholder="Enter your patient ID"
+                  required
+                />
+              </div>
+              <button
+                type="submit"
+                className="w-full rounded-2xl bg-blue-600 px-5 py-3 text-white font-semibold transition hover:bg-blue-700"
+              >
+                View My Bill
+              </button>
+            </form>
+          </div>
         </div>
       </div>
     );
@@ -71,12 +110,18 @@ export default function PatientPage() {
             <p className="text-gray-600 mt-2">Your healthcare charges explained clearly.</p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <p className="text-sm text-gray-700">Signed in as <span className="font-semibold">{userProfile.name}</span></p>
+            <p className="text-sm text-gray-700">Patient ID: <span className="font-semibold">{enteredPatientId}</span></p>
+            <button
+              onClick={() => setEnteredPatientId('')}
+              className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm text-gray-700 transition hover:bg-gray-50"
+            >
+              Change Patient ID
+            </button>
             <button
               onClick={handleSignOut}
               className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm text-gray-700 transition hover:bg-gray-50"
             >
-              Sign out
+              ← Back to Home
             </button>
           </div>
         </div>
