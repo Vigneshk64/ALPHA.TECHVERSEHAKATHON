@@ -1,52 +1,40 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { signInWithGoogle, onAuthStateChangedListener, getUserProfile, createUserProfile, signOutUser } from '@/lib/auth';
+import { signInWithGoogle, onAuthStateChangedListener, getUserProfile } from '@/lib/auth';
 import type { UserRole } from '@/lib/types';
-import type { User } from 'firebase/auth';
 
-const roleOptions: UserRole[] = ['patient', 'doctor', 'billing'];
-
-export default function HomePage() {
-  const router = useRouter();
+export default function Home() {
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<User | null>(null);
-  const [needsRole, setNeedsRole] = useState(false);
-  const [selectedRole, setSelectedRole] = useState<UserRole>('patient');
-  const [error, setError] = useState('');
-  const [savingRole, setSavingRole] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChangedListener(async (firebaseUser) => {
-      setLoading(true);
-      setError('');
-
-      if (!firebaseUser) {
-        setUser(null);
-        setNeedsRole(false);
-        setLoading(false);
-        return;
-      }
-
-      setUser(firebaseUser);
+    const unsubscribe = onAuthStateChangedListener(async (authUser) => {
       try {
-        const profile = await getUserProfile(firebaseUser.uid);
-
-        if (profile) {
-          const destination =
-            profile.role === 'doctor'
-              ? '/doctor'
-              : profile.role === 'patient'
-              ? '/patient'
-              : '/billing';
-          router.replace(destination);
+        if (authUser) {
+          const profile = await getUserProfile(authUser.uid);
+          if (profile) {
+            switch (profile.role) {
+              case 'patient':
+                router.push('/patient');
+                break;
+              case 'doctor':
+                router.push('/doctor');
+                break;
+              case 'billing':
+                router.push('/billing');
+                break;
+            }
+          } else {
+            router.push('/setup');
+          }
           return;
         }
-
-        setNeedsRole(true);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Unable to load profile');
+        console.error('Auth listener error:', err);
+        setError(err instanceof Error ? err.message : 'Unable to verify your account.');
       } finally {
         setLoading(false);
       }
@@ -55,121 +43,22 @@ export default function HomePage() {
     return () => unsubscribe();
   }, [router]);
 
-  const handleSignIn = async () => {
-    setError('');
+  const handleGoogleSignIn = async () => {
+    setError(null);
     try {
       await signInWithGoogle();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Google sign-in failed');
-    }
-  };
-
-  const handleSaveRole = async () => {
-    if (!user) {
-      setError('No signed-in user found. Please sign in again.');
-      return;
-    }
-
-    setSavingRole(true);
-    setError('');
-
-    try {
-      await createUserProfile(
-        user.uid,
-        user.email ?? '',
-        user.displayName ?? user.email?.split('@')[0] ?? 'Patient',
-        selectedRole
-      );
-
-      const destination =
-        selectedRole === 'doctor'
-          ? '/doctor'
-          : selectedRole === 'patient'
-          ? '/patient'
-          : '/billing';
-
-      router.replace(destination);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unable to save role');
-    } finally {
-      setSavingRole(false);
-    }
-  };
-
-  const handleSignOut = async () => {
-    setError('');
-    try {
-      await signOutUser();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unable to sign out');
+      console.error('Sign in error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to sign in. Please try again.');
     }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-blue-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Checking your login state...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (needsRole && user) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex items-center justify-center px-4 py-16">
-        <div className="w-full max-w-xl bg-white rounded-3xl shadow-xl p-8">
-          <div className="mb-6 text-center">
-            <h1 className="text-3xl font-bold text-gray-900">Select Your Role</h1>
-            <p className="mt-2 text-gray-600">New user detected. Choose the role that describes your access.</p>
-          </div>
-
-          {error && (
-            <div className="mb-4 rounded-lg bg-red-50 border border-red-200 p-4 text-sm text-red-700">
-              {error}
-            </div>
-          )}
-
-          <div className="space-y-4">
-            {roleOptions.map((option) => (
-              <button
-                key={option}
-                type="button"
-                onClick={() => setSelectedRole(option)}
-                className={`w-full rounded-2xl border px-4 py-4 text-left transition ${
-                  selectedRole === option
-                    ? 'border-blue-600 bg-blue-50 text-blue-900'
-                    : 'border-gray-200 bg-white text-gray-800 hover:border-blue-300'
-                }`}
-              >
-                <p className="font-semibold capitalize">{option}</p>
-                <p className="text-sm text-gray-500">
-                  {option === 'patient'
-                    ? 'See your own bill and request explanations.'
-                    : option === 'doctor'
-                    ? 'Add procedures and update patient bills.'
-                    : 'Access final invoices and billing records.'}
-                </p>
-              </button>
-            ))}
-          </div>
-
-          <button
-            onClick={handleSaveRole}
-            disabled={savingRole}
-            className="mt-6 w-full rounded-2xl bg-blue-600 px-5 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
-          >
-            {savingRole ? 'Saving role...' : 'Continue'}
-          </button>
-
-          <button
-            onClick={handleSignOut}
-            type="button"
-            className="mt-3 w-full rounded-2xl border border-gray-200 bg-white px-5 py-3 text-gray-700 transition hover:bg-gray-50"
-          >
-            Sign out
-          </button>
+          <p className="text-gray-600">Loading...</p>
         </div>
       </div>
     );
@@ -180,44 +69,75 @@ export default function HomePage() {
       <nav className="bg-white border-b border-blue-100 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold text-blue-600">🏥 Hospital Billing Transparency</h1>
-          <button
-            onClick={handleSignIn}
-            className="rounded-full bg-blue-600 px-5 py-2 text-white transition hover:bg-blue-700"
-          >
-            Sign in with Google
-          </button>
+          <p className="text-gray-600 text-sm">Making healthcare costs clear</p>
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-6 py-12 sm:py-16">
-        <div className="text-center mb-14">
-          <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">Login to manage hospital billing securely</h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Sign in with Google, then access the patient, doctor, or billing experience based on your assigned role.
+      <div className="max-w-4xl mx-auto px-6 py-16">
+        <div className="text-center mb-12">
+          <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-6">
+            Welcome to Hospital Billing System
+          </h2>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
+            Sign in to access your personalized dashboard and manage medical billing with transparency.
           </p>
         </div>
 
-        {error && (
-          <div className="mb-8 rounded-3xl border border-red-200 bg-red-50 p-5 text-red-700">
-            {error}
+        <div className="bg-white rounded-lg shadow-lg p-8 md:p-12 max-w-md mx-auto">
+          <div className="text-center mb-8">
+            <div className="text-6xl mb-4">🔐</div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">Sign In</h3>
+            <p className="text-gray-600">Use your Google account to continue</p>
           </div>
-        )}
 
-        <div className="grid gap-8 lg:grid-cols-3">
-          <div className="rounded-3xl border border-blue-100 bg-white p-8 shadow-sm">
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">Patient</h3>
-            <p className="text-gray-600">See your bill in real time and ask AI for plain-language procedure explanations.</p>
-          </div>
-          <div className="rounded-3xl border border-green-100 bg-white p-8 shadow-sm">
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">Doctor</h3>
-            <p className="text-gray-600">Add procedures and costs to patient records quickly with Firebase-backed persistence.</p>
-          </div>
-          <div className="rounded-3xl border border-purple-100 bg-white p-8 shadow-sm">
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">Billing</h3>
-            <p className="text-gray-600">Review final invoices and export itemized bills for patients.</p>
+          <button
+            onClick={handleGoogleSignIn}
+            className="w-full flex items-center justify-center gap-3 bg-white border-2 border-gray-300 hover:border-gray-400 text-gray-700 font-medium py-3 px-4 rounded-lg transition-colors hover:bg-gray-50"
+          >
+            <svg className="w-5 h-5" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+            </svg>
+            Continue with Google
+          </button>
+
+          {error && (
+            <div className="mt-6 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+              {error}
+            </div>
+          )}
+        </div>
+
+        <div className="mt-16 bg-white rounded-lg shadow-lg p-8 md:p-12 border-l-4 border-blue-600">
+          <h3 className="text-2xl font-bold text-gray-900 mb-6">✨ What You Can Do</h3>
+          <div className="grid md:grid-cols-3 gap-6">
+            <div className="text-center">
+              <div className="text-3xl mb-2">👤</div>
+              <h4 className="font-bold text-gray-900 mb-1">Patients</h4>
+              <p className="text-gray-600 text-sm">View bills, track costs, get AI explanations</p>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl mb-2">👨‍⚕️</div>
+              <h4 className="font-bold text-gray-900 mb-1">Doctors</h4>
+              <p className="text-gray-600 text-sm">Add procedures, update charges in real-time</p>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl mb-2">📋</div>
+              <h4 className="font-bold text-gray-900 mb-1">Billing Staff</h4>
+              <p className="text-gray-600 text-sm">Generate summaries, export documents</p>
+            </div>
           </div>
         </div>
-      </main>
+      </div>
+
+      <footer className="bg-gray-900 text-white mt-16 py-8">
+        <div className="max-w-7xl mx-auto px-6 text-center">
+          <p className="mb-2">🏥 Hospital Billing Transparency System - Healthcare Hackathon</p>
+          <p className="text-gray-400 text-sm">Making healthcare costs transparent and understandable for everyone</p>
+        </div>
+      </footer>
     </div>
   );
 }

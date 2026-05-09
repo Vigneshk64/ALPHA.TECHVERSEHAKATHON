@@ -28,3 +28,19 @@ export interface Procedure {
   defaultCost: number;
   category: string;
 }
+
+export interface User {
+  uid: string;
+  email: string;
+  name: string;
+  role?: 'patient' | 'doctor' | 'billing';
+  createdAt?: number;
+}
+
+export interface AuthContextType {
+  user: User | null;
+  needsProfileSetup: boolean;
+  loading: boolean;
+  error: string | null;
+  logout: () => Promise<void>;
+}
