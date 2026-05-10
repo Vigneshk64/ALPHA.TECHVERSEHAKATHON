@@ -1,8 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useBillListener } from '@/lib/hooks';
 import { useRouter } from 'next/navigation';
+import { db } from '@/lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 
 export default function PatientPage() {
   const router = useRouter();
@@ -15,6 +17,32 @@ export default function PatientPage() {
   const [rateLimited, setRateLimited]         = useState(false);
   const [aiLoading, setAiLoading]             = useState(false);
   const [aiErr, setAiErr]                     = useState('');
+  const [patientName, setPatientName]         = useState('');
+  const [patientAge, setPatientAge]           = useState('');
+
+  useEffect(() => {
+    async function fetchName() {
+      if (!enteredId) {
+        setPatientName('');
+        setPatientAge('');
+        return;
+      }
+      try {
+        const userRef = doc(db!, 'users', enteredId);
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists()) {
+          setPatientName(userSnap.data().name || '');
+          setPatientAge(userSnap.data().age || '');
+        } else {
+          setPatientName('');
+          setPatientAge('');
+        }
+      } catch (err) {
+        console.error("Error fetching name", err);
+      }
+    }
+    fetchName();
+  }, [enteredId]);
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -144,21 +172,35 @@ export default function PatientPage() {
             <p style={{ color: '#2563EB' }} className="text-xs font-semibold uppercase tracking-wide">KVS Hospital · Patient Portal</p>
             <h1 style={{ color: '#0F172A' }} className="text-xl font-bold leading-tight">My Medical Bill</h1>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <span style={{ background: '#F1F5F9', color: '#0F172A', border: '1px solid #E2E8F0' }}
-              className="rounded-lg px-3 py-1.5 text-sm">
-              ID: <strong>{enteredId}</strong>
-            </span>
-            <button onClick={() => setEnteredId('')}
-              style={{ border: '1px solid #CBD5E1', color: '#374151' }}
-              className="rounded-lg bg-white px-3 py-1.5 text-sm transition hover:bg-gray-50">
-              Change ID
-            </button>
-            <button onClick={() => router.replace('/')}
-              style={{ border: '1px solid #CBD5E1', color: '#374151' }}
-              className="rounded-lg bg-white px-3 py-1.5 text-sm transition hover:bg-gray-50">
-              ← Home
-            </button>
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex flex-wrap gap-2 print:hidden">
+              <button onClick={() => window.print()}
+                style={{ background: '#2563EB', color: '#FFFFFF' }}
+                className="rounded-lg px-3 py-1.5 text-sm font-semibold transition hover:opacity-90">
+                🖨️ Print Bill
+              </button>
+              <button onClick={() => setEnteredId('')}
+                style={{ border: '1px solid #CBD5E1', color: '#374151' }}
+                className="rounded-lg bg-white px-3 py-1.5 text-sm transition hover:bg-gray-50">
+                Change ID
+              </button>
+              <button onClick={() => router.replace('/')}
+                style={{ border: '1px solid #CBD5E1', color: '#374151' }}
+                className="rounded-lg bg-white px-3 py-1.5 text-sm transition hover:bg-gray-50">
+                ← Home
+              </button>
+            </div>
+            <div style={{ background: '#F1F5F9', color: '#0F172A', border: '1px solid #E2E8F0' }}
+              className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm">
+              {patientName && (
+                <span>
+                  <strong>{patientName}</strong>
+                  {patientAge && <span className="ml-1 text-xs" style={{ color: '#64748B' }}>(Age {patientAge})</span>}
+                  <span style={{ color: '#94A3B8' }} className="ml-2">•</span>
+                </span>
+              )}
+              <span>ID: <strong>{enteredId}</strong></span>
+            </div>
           </div>
         </div>
       </header>
@@ -168,7 +210,7 @@ export default function PatientPage() {
         {/* Total banner */}
         <div style={{ background: '#2563EB' }} className="rounded-2xl p-7 mb-5 shadow-sm">
           <p style={{ color: '#BFDBFE' }} className="text-xs font-semibold uppercase tracking-widest">Current Charges</p>
-          <p className="mt-2 text-5xl font-bold text-white">${total.toFixed(2)}</p>
+          <p className="mt-2 text-5xl font-bold text-white">₹{total.toFixed(2)}</p>
           <p style={{ color: '#BFDBFE' }} className="mt-1 text-sm">
             {procedures.length} charge{procedures.length !== 1 ? 's' : ''} from hospital catalog
           </p>
@@ -177,7 +219,7 @@ export default function PatientPage() {
             <div className="mt-5 grid grid-cols-2 gap-4 sm:max-w-sm">
               <div style={{ background: 'rgba(255,255,255,0.15)' }} className="rounded-xl px-4 py-3">
                 <p style={{ color: '#BFDBFE' }} className="text-xs font-semibold">Doctor&apos;s Estimate</p>
-                <p className="mt-1 text-2xl font-bold text-white">${estimatedCost.toFixed(2)}</p>
+                <p className="mt-1 text-2xl font-bold text-white">₹{estimatedCost.toFixed(2)}</p>
               </div>
               <div style={{ background: overEstimate ? 'rgba(251,191,36,0.25)' : 'rgba(52,211,153,0.25)' }}
                 className="rounded-xl px-4 py-3">
@@ -192,24 +234,24 @@ export default function PatientPage() {
 
         {/* Alerts */}
         {overEstimate && (
-          <div style={{ background: '#FFFBEB', border: '1px solid #FDE68A' }} className="mb-5 flex items-start gap-3 rounded-xl p-4">
+          <div style={{ background: '#FFFBEB', border: '1px solid #FDE68A' }} className="mb-5 flex items-start gap-3 rounded-xl p-4 print:hidden">
             <span style={{ color: '#D97706' }} className="text-lg mt-0.5">⚠</span>
             <div>
               <p style={{ color: '#92400E' }} className="font-semibold text-sm">Charges exceed the initial estimate</p>
               <p style={{ color: '#78350F' }} className="text-sm mt-1 leading-relaxed">
-                Your doctor estimated <strong>${estimatedCost!.toFixed(2)}</strong> but current charges are <strong>${total.toFixed(2)}</strong> — a difference of <strong>${Math.abs(diff).toFixed(2)}</strong>. Please speak to the billing desk if you have questions.
+                Your doctor estimated <strong>₹{estimatedCost!.toFixed(2)}</strong> but current charges are <strong>₹{total.toFixed(2)}</strong> — a difference of <strong>₹{Math.abs(diff).toFixed(2)}</strong>. Please speak to the billing desk if you have questions.
               </p>
             </div>
           </div>
         )}
 
         {withinEstimate && (
-          <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0' }} className="mb-5 flex items-start gap-3 rounded-xl p-4">
+          <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0' }} className="mb-5 flex items-start gap-3 rounded-xl p-4 print:hidden">
             <span style={{ color: '#059669' }} className="text-lg mt-0.5">✓</span>
             <div>
               <p style={{ color: '#065F46' }} className="font-semibold text-sm">Within the estimated cost</p>
               <p style={{ color: '#047857' }} className="text-sm mt-1">
-                Current charges of <strong>${total.toFixed(2)}</strong> are within your doctor&apos;s estimate of <strong>${estimatedCost!.toFixed(2)}</strong>.
+                Current charges of <strong>₹{total.toFixed(2)}</strong> are within your doctor&apos;s estimate of <strong>₹{estimatedCost!.toFixed(2)}</strong>.
               </p>
             </div>
           </div>
@@ -258,10 +300,10 @@ export default function PatientPage() {
                       </p>
                     </div>
                     <div className="flex items-center gap-4 sm:flex-col sm:items-end">
-                      <p style={{ color: '#0F172A' }} className="text-xl font-bold">${item.cost.toFixed(2)}</p>
+                      <p style={{ color: '#0F172A' }} className="text-xl font-bold">₹{item.cost.toFixed(2)}</p>
                       <button onClick={() => explain(item.name)}
                         style={{ background: '#EFF6FF', color: '#2563EB', border: '1px solid #BFDBFE' }}
-                        className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition hover:bg-blue-100">
+                        className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition hover:bg-blue-100 print:hidden">
                         💡 What is this?
                       </button>
                     </div>

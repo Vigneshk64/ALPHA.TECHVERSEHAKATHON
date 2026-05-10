@@ -21,7 +21,7 @@ export default function BillingSummaryPage() {
       item.name,
       item.type || '',
       item.category || '',
-      `$${item.cost.toFixed(2)}`,
+      `₹${item.cost.toFixed(2)}`,
       item.reason,
       new Date(item.timestamp).toLocaleDateString(),
     ]);
@@ -30,7 +30,7 @@ export default function BillingSummaryPage() {
       headers.join(','),
       ...rows.map((row) => row.map((cell) => `"${cell}"`).join(',')),
       '',
-      `Total,$${total.toFixed(2)}`,
+      `Total,₹${total.toFixed(2)}`,
     ].join('\n');
 
     const blob = new Blob([csv], { type: 'text/csv' });
@@ -178,7 +178,7 @@ export default function BillingSummaryPage() {
                       <td className="py-4 px-4 text-gray-600">{item.category || '-'}</td>
                       <td className="py-4 px-4 text-gray-600">{item.reason}</td>
                       <td className="py-4 px-4 text-gray-500">{new Date(item.timestamp).toLocaleDateString()}</td>
-                      <td className="py-4 px-4 text-right font-semibold text-gray-900">${item.cost.toFixed(2)}</td>
+                      <td className="py-4 px-4 text-right font-semibold text-gray-900">₹{item.cost.toFixed(2)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -189,7 +189,7 @@ export default function BillingSummaryPage() {
               <div className="w-full max-w-xs rounded-3xl border border-gray-200 bg-blue-50 p-6">
                 <div className="flex items-center justify-between text-sm font-semibold text-gray-700">
                   <span>Total Amount Due</span>
-                  <span>${total.toFixed(2)}</span>
+                  <span>₹{total.toFixed(2)}</span>
                 </div>
               </div>
             </div>

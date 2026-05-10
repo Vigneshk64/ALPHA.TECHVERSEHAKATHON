@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useMemo, useState } from 'react';
 import { db } from '@/lib/firebase';
@@ -23,6 +23,7 @@ export default function DoctorPage() {
   const [verifyingPatient, setVerifyingPatient] = useState(false);
   const [showCreatePatient, setShowCreatePatient] = useState(false);
   const [newPatientName, setNewPatientName] = useState('');
+  const [newPatientAge, setNewPatientAge] = useState('');
   const [newPatientEstimate, setNewPatientEstimate] = useState('');
   const [creatingPatient, setCreatingPatient] = useState(false);
   const [catalogItems, setCatalogItems] = useState<HospitalCatalogItem[]>(DEFAULT_HOSPITAL_CATALOG);
@@ -165,6 +166,7 @@ export default function DoctorPage() {
     setVerifiedPatient(null);
     setShowCreatePatient(false);
     setNewPatientName('');
+    setNewPatientAge('');
     setSelectedCharges([]);
     setConsultationPrice('');
     setReason('');
@@ -185,6 +187,7 @@ export default function DoctorPage() {
     setVerifiedPatient(null);
     setShowCreatePatient(false);
     setNewPatientName('');
+    setNewPatientAge('');
     setNewPatientEstimate('');
     setSelectedCharges([]);
     setConsultationPrice('');
@@ -224,6 +227,7 @@ export default function DoctorPage() {
   const handleCreatePatient = async () => {
     const trimmedPatientId = patientId.trim();
     const trimmedPatientName = newPatientName.trim();
+    const trimmedPatientAge = newPatientAge.trim();
 
     if (!trimmedPatientId) {
       setError('Please enter a patient ID');
@@ -232,6 +236,11 @@ export default function DoctorPage() {
 
     if (!trimmedPatientName) {
       setError('Please enter the patient name');
+      return;
+    }
+
+    if (!trimmedPatientAge) {
+      setError('Please enter the patient age');
       return;
     }
 
@@ -250,6 +259,7 @@ export default function DoctorPage() {
       await setDoc(userRef, {
         patientId: trimmedPatientId,
         name: trimmedPatientName,
+        age: trimmedPatientAge,
         role: 'patient',
         createdBy: 'doctor',
         createdAt: timestamp,
@@ -269,6 +279,7 @@ export default function DoctorPage() {
       setPatientId(trimmedPatientId);
       setShowCreatePatient(false);
       setNewPatientName('');
+      setNewPatientAge('');
       setNewPatientEstimate('');
       setSuccess(true);
       setSuccessMessage('Patient created successfully. You can now add procedures.');
@@ -466,10 +477,16 @@ export default function DoctorPage() {
             <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE' }} className="mb-7 rounded-xl p-5">
               <h2 style={{ color: '#0F172A' }} className="font-bold mb-1">Create New Patient</h2>
               <p style={{ color: '#64748B' }} className="text-sm mb-4">No patient found for this ID. Register them below.</p>
-              <div className="grid gap-4 md:grid-cols-3">
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <div>
                   <label style={{ color: '#374151' }} className="mb-1.5 block text-sm font-medium">Patient Name</label>
                   <input type="text" value={newPatientName} placeholder="Full name" onChange={e => setNewPatientName(e.target.value)}
+                    style={{ border: '1px solid #CBD5E1', color: '#0F172A' }}
+                    className="w-full rounded-lg bg-white px-4 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100" />
+                </div>
+                <div>
+                  <label style={{ color: '#374151' }} className="mb-1.5 block text-sm font-medium">Age</label>
+                  <input type="number" min="0" value={newPatientAge} placeholder="e.g. 45" onChange={e => setNewPatientAge(e.target.value)}
                     style={{ border: '1px solid #CBD5E1', color: '#0F172A' }}
                     className="w-full rounded-lg bg-white px-4 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100" />
                 </div>
@@ -481,7 +498,7 @@ export default function DoctorPage() {
                 </div>
                 <div>
                   <label style={{ color: '#374151' }} className="mb-1.5 block text-sm font-medium">
-                    Estimated Cost ($) <span style={{ color: '#94A3B8' }} className="font-normal">(optional)</span>
+                    Estimated Cost (₹) <span style={{ color: '#94A3B8' }} className="font-normal">(optional)</span>
                   </label>
                   <input type="number" min="0" step="0.01" value={newPatientEstimate} placeholder="e.g. 5000" onChange={e => setNewPatientEstimate(e.target.value)}
                     style={{ border: '1px solid #FDE68A', color: '#0F172A', background: '#FFFBEB' }}
@@ -539,7 +556,7 @@ export default function DoctorPage() {
                         <span style={{ background: '#F1F5F9', color: '#64748B' }} className="rounded-full px-2.5 py-0.5 text-xs font-medium capitalize shrink-0">{item.type}</span>
                       </div>
                       <p style={{ color: '#2563EB' }} className="mt-3 text-sm font-bold">
-                        {item.editableByDoctor ? 'Doctor priced' : `$${item.price.toFixed(2)}`}
+                        {item.editableByDoctor ? 'Doctor priced' : `₹${item.price.toFixed(2)}`}
                       </p>
                     </button>
                   );
@@ -561,13 +578,13 @@ export default function DoctorPage() {
                           <p style={{ color: '#0F172A' }} className="font-medium">{item.name}</p>
                           <p style={{ color: '#64748B' }} className="text-xs capitalize">{item.type}</p>
                         </div>
-                        <p style={{ color: '#1D4ED8' }} className="font-bold">${charge.price.toFixed(2)}</p>
+                        <p style={{ color: '#1D4ED8' }} className="font-bold">₹{charge.price.toFixed(2)}</p>
                       </div>
                     ))}
                   </div>
                   <div className="mt-3 flex items-center justify-between border-t pt-3 text-sm font-bold" style={{ borderColor: '#BFDBFE' }}>
                     <span style={{ color: '#0F172A' }}>Total</span>
-                    <span style={{ color: '#1D4ED8' }}>${selectedTotal.toFixed(2)}</span>
+                    <span style={{ color: '#1D4ED8' }}>₹{selectedTotal.toFixed(2)}</span>
                   </div>
                 </div>
               ) : (
@@ -577,7 +594,7 @@ export default function DoctorPage() {
               )}
               {selectedConsultation && (
                 <div className="mt-3">
-                  <label style={{ color: '#374151' }} className="mb-1.5 block text-sm font-medium">Consultation Price ($)</label>
+                  <label style={{ color: '#374151' }} className="mb-1.5 block text-sm font-medium">Consultation Price (₹)</label>
                   <input type="number" min="1" step="1" value={consultationPrice} disabled={!verifiedPatient}
                     onChange={e => handleConsultationPriceChange(e.target.value)} placeholder="Enter price"
                     style={{ border: '1px solid #CBD5E1', color: '#0F172A' }}
