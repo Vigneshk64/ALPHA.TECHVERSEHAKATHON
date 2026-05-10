@@ -59,10 +59,10 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen" style={{ background: '#F8FAFC', color: '#0F172A', fontFamily: 'var(--font-sans)' }}>
+    <div className="min-h-screen" style={{ background: 'transparent', color: '#0F172A', fontFamily: 'var(--font-sans)' }}>
 
       {/* ── NAV ─────────────────────────────────────────────── */}
-      <header style={{ background: '#FFFFFF', borderBottom: '1px solid #E2E8F0' }} className="sticky top-0 z-40">
+      <header style={{ background: 'rgba(255,255,255,0.6)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(226, 232, 240, 0.5)' }} className="sticky top-0 z-40">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
           <button onClick={() => router.push('/')} className="flex items-center gap-3">
             <div style={{ background: '#2563EB' }} className="grid h-9 w-9 place-items-center rounded-lg text-white font-bold text-sm">
@@ -94,7 +94,7 @@ export default function Home() {
       </header>
 
       {/* ── HERO ────────────────────────────────────────────── */}
-      <section style={{ background: '#EFF6FF', borderBottom: '1px solid #E2E8F0' }}>
+      <section style={{ background: 'transparent', borderBottom: '1px solid rgba(226, 232, 240, 0.5)' }}>
         <div className="mx-auto grid max-w-6xl items-center gap-12 px-6 py-14 lg:grid-cols-[1fr_420px]">
 
           {/* Left copy */}
@@ -176,7 +176,7 @@ export default function Home() {
       </section>
 
       {/* ── FAILURE ANALYSIS ────────────────────────────────── */}
-      <section style={{ background: '#FFFFFF', borderBottom: '1px solid #E2E8F0' }}>
+      <section style={{ background: 'transparent', borderBottom: '1px solid rgba(226, 232, 240, 0.5)' }}>
         <div className="mx-auto max-w-6xl px-6 py-16">
 
           <div className="mb-10 text-center">
@@ -230,7 +230,7 @@ export default function Home() {
       </section>
 
       {/* ── FOOTER ──────────────────────────────────────────── */}
-      <footer style={{ background: '#F1F5F9', borderTop: '1px solid #E2E8F0' }} className="py-6">
+      <footer style={{ background: 'transparent', borderTop: '1px solid rgba(226, 232, 240, 0.5)' }} className="py-6">
         <div className="mx-auto flex max-w-6xl flex-col gap-2 px-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
             <div style={{ background: '#2563EB' }} className="grid h-7 w-7 place-items-center rounded text-white text-xs font-bold">K</div>

@@ -378,7 +378,7 @@ export default function DoctorPage() {
   // ── Loading ───────────────────────────────────────────────
   if (!authReady) {
     return (
-      <div style={{ minHeight: '100vh', background: '#F8FAFC', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ minHeight: '100vh', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div className="text-center">
           <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-b-2" style={{ borderColor: '#2563EB' }} />
           <p style={{ color: '#64748B' }} className="text-sm font-medium">Loading doctor portal…</p>
@@ -390,7 +390,7 @@ export default function DoctorPage() {
   // ── Login ─────────────────────────────────────────────────
   if (!loggedIn) {
     return (
-      <div style={{ minHeight: '100vh', background: '#F8FAFC', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+      <div style={{ minHeight: '100vh', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
         <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', width: '100%', maxWidth: '420px' }} className="rounded-2xl p-8 shadow-sm">
           <div className="flex items-center gap-3 mb-7">
             <div style={{ background: '#2563EB' }} className="grid h-10 w-10 place-items-center rounded-lg text-white font-bold text-sm">KVS</div>
@@ -429,7 +429,7 @@ export default function DoctorPage() {
 
   // ── Dashboard ─────────────────────────────────────────────
   return (
-    <div style={{ minHeight: '100vh', background: '#F8FAFC', color: '#0F172A' }}>
+    <div style={{ minHeight: '100vh', background: 'transparent', color: '#0F172A' }}>
 
       <header style={{ background: '#FFFFFF', borderBottom: '1px solid #E2E8F0', position: 'sticky', top: 0, zIndex: 30 }}>
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-6 py-3">

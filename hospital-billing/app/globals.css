@@ -30,7 +30,9 @@ html {
 }
 
 body {
-  background: var(--clr-bg);
+  background: 
+    linear-gradient(rgba(248, 250, 252, 0.88), rgba(248, 250, 252, 0.88)),
+    url('/hospital-bg.png') center/cover fixed;
   color: var(--clr-text);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;

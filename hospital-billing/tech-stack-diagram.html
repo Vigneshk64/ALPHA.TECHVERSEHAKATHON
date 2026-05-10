@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KVS Hospital Billing - Tech Stack Layer Diagram</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F8FAFC;
+            color: #0F172A;
+            margin: 0;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            background: #FFFFFF;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            border: 1px solid #E2E8F0;
+            max-width: 1000px;
+            width: 100%;
+        }
+        h1 {
+            color: #1D4ED8;
+            margin-top: 0;
+            text-align: center;
+            font-size: 28px;
+        }
+        p.subtitle {
+            color: #64748B;
+            text-align: center;
+            margin-bottom: 40px;
+            font-size: 15px;
+        }
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Technology Stack & Requirements Layer Diagram</h1>
+        <p class="subtitle">A structural breakdown of the 4 core layers powering the KVS Hospital Billing platform.</p>
+
+        <div class="mermaid">
+            %%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter', 'lineColor': '#94A3B8'}}}%%
+            graph TD
+                
+                subgraph Layer1 [1. Presentation / UI Layer]
+                    direction LR
+                    Tailwind[Tailwind CSS v4]
+                    React[React.js Components]
+                    Inter[Inter Typography]
+                end
+
+                subgraph Layer2 [2. Application & Logic Layer]
+                    direction LR
+                    NextJS[Next.js App Router]
+                    TS[TypeScript Strict Typing]
+                    API[Next.js Secure API Routes]
+                end
+
+                subgraph Layer3 [3. Data & Sync Layer]
+                    direction LR
+                    Firestore[(Firebase Firestore NoSQL)]
+                    Hooks[Real-Time Snapshot Sync]
+                end
+
+                subgraph Layer4 [4. AI & External Service Layer]
+                    direction LR
+                    OpenRouter[OpenRouter API Gateway]
+                    Llama[Meta Llama 3 AI Models]
+                end
+
+                %% Data Flow
+                Layer1 -->|User Actions & Rendering| Layer2
+                Layer2 -->|Queries & Updates| Layer3
+                Layer3 -.->|Live Data Push| Layer1
+                
+                Layer2 -->|Sanitized Prompts| Layer4
+                Layer4 -->|Plain English Explanations| Layer2
+
+                %% Styling
+                classDef l1 fill:#DBEAFE,stroke:#2563EB,stroke-width:2px,color:#1E3A8A,font-weight:bold;
+                classDef l2 fill:#FEF9C3,stroke:#EAB308,stroke-width:2px,color:#713F12,font-weight:bold;
+                classDef l3 fill:#DCFCE7,stroke:#22C55E,stroke-width:2px,color:#14532D,font-weight:bold;
+                classDef l4 fill:#F3E8FF,stroke:#A855F7,stroke-width:2px,color:#581C87,font-weight:bold;
+                
+                class Tailwind,React,Inter l1;
+                class NextJS,TS,API l2;
+                class Firestore,Hooks l3;
+                class OpenRouter,Llama l4;
+        </div>
+    </div>
+
+    <script>
+        mermaid.initialize({ startOnLoad: true });
+    </script>
+</body>
+</html>

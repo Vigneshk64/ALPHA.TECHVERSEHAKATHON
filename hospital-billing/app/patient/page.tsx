@@ -77,7 +77,7 @@ export default function PatientPage() {
   /* ─── ID Entry ──────────────────────────────────────────── */
   if (!enteredId) {
     return (
-      <div style={{ minHeight: '100vh', background: '#F8FAFC', color: '#0F172A' }}>
+      <div style={{ minHeight: '100vh', background: 'transparent', color: '#0F172A' }}>
 
         {/* nav */}
         <header style={{ background: '#FFFFFF', borderBottom: '1px solid #E2E8F0' }}>
@@ -163,7 +163,7 @@ export default function PatientPage() {
   const diff           = estimatedCost !== null ? total - estimatedCost : 0;
 
   return (
-    <div style={{ minHeight: '100vh', background: '#F8FAFC', color: '#0F172A' }}>
+    <div style={{ minHeight: '100vh', background: 'transparent', color: '#0F172A' }}>
 
       {/* nav */}
       <header style={{ background: '#FFFFFF', borderBottom: '1px solid #E2E8F0', position: 'sticky', top: 0, zIndex: 30 }}>
